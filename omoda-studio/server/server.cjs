@@ -4,6 +4,9 @@ const app = express();
 app.use(express.json({ limit: '2mb' }));
 
 const ANGLE_MODE_MARKER = '[ANGLE_MODE]';
+const GENERATION_OPTIONS_MARKER = '[OMODA_OPTIONS]';
+const DEFAULT_BACKGROUND_PROMPT = 'Premium OMODA showroom interior with cinematic architectural lighting, polished floor reflections, refined luxury atmosphere, and a realistic editorial fashion backdrop.';
+
 const CONFIG = {
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
@@ -142,7 +145,50 @@ async function callGemini(prompt, images) {
   return Buffer.from(imagePart.inlineData.data, 'base64');
 }
 
-function buildPresetPrompt(clothing) {
+function parseGenerationOptions(userPrompt) {
+  if (!userPrompt || !userPrompt.trim()) {
+    return {
+      modelPrompt: null,
+      backgroundPrompt: DEFAULT_BACKGROUND_PROMPT,
+      backgroundImageUrl: null,
+    };
+  }
+
+  const trimmed = userPrompt.trim();
+  if (!trimmed.startsWith(GENERATION_OPTIONS_MARKER)) {
+    return {
+      modelPrompt: trimmed,
+      backgroundPrompt: DEFAULT_BACKGROUND_PROMPT,
+      backgroundImageUrl: null,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed.slice(GENERATION_OPTIONS_MARKER.length));
+    return {
+      modelPrompt: typeof parsed.modelPrompt === 'string' && parsed.modelPrompt.trim() ? parsed.modelPrompt.trim() : null,
+      backgroundPrompt: typeof parsed.backgroundPrompt === 'string' && parsed.backgroundPrompt.trim()
+        ? parsed.backgroundPrompt.trim()
+        : DEFAULT_BACKGROUND_PROMPT,
+      backgroundImageUrl: typeof parsed.backgroundImageUrl === 'string' && parsed.backgroundImageUrl.trim()
+        ? parsed.backgroundImageUrl.trim()
+        : null,
+    };
+  } catch {
+    return {
+      modelPrompt: trimmed.replace(GENERATION_OPTIONS_MARKER, '').trim() || null,
+      backgroundPrompt: DEFAULT_BACKGROUND_PROMPT,
+      backgroundImageUrl: null,
+    };
+  }
+}
+
+function resolveBackgroundPrompt(options) {
+  return options.backgroundPrompt?.trim() || DEFAULT_BACKGROUND_PROMPT;
+}
+
+function buildPresetPrompt(options) {
+  const backgroundPrompt = resolveBackgroundPrompt(options);
   let prompt = `You are an advanced fashion virtual try-on AI.
 
 Task:
@@ -150,32 +196,33 @@ Create a photorealistic full-body fashion image following these instructions.
 
 Requirements:
 - Image 1: Clothing item to be worn
-- Image 2: Reference model
+- Image 2: Reference model${options.backgroundImageUrl ? '\n- Image 3: Background reference image' : ''}
 - Dress the model from Image 2 in the clothing from Image 1
 - Accurately replicate the clothing's design, fit, length, folds, seams, texture, and material
 - Ensure the clothing looks naturally worn and well-fitted, not pasted or floating
 - Maintain the exact pose, facial features, expression, skin tone, and hair from Image 2
 - Show the model in full height (head to toe), with no cropping
 - Use a professional fashion model pose that clearly presents the clothing
-- Place the model on a completely pure white background (#FFFFFF)
-- Use soft, even studio lighting with clean, minimal shadows
+- Background scene: ${backgroundPrompt}
+${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 3 while keeping the model and garment clearly visible' : '- Build the requested environment naturally around the model while keeping the garment easy to evaluate'}
 - Maintain realistic skin texture, natural colors, and sharp focus
 - Image resolution must be exactly 864 x 1232 pixels (portrait orientation)
-- Keep the result suitable for a professional fashion catalog`;
+- Keep the result suitable for a professional fashion catalog or campaign image`;
 
-  if (clothing.user_prompt?.trim()) {
-    prompt += `\n\nADDITIONAL USER REQUIREMENTS:\n${clothing.user_prompt.trim()}`;
+  if (options.modelPrompt) {
+    prompt += `\n\nADDITIONAL USER REQUIREMENTS:\n${options.modelPrompt}`;
   }
 
-  prompt += '\n\nOutput: One single ultra-realistic full-body fashion image on a pure white background.';
+  prompt += '\n\nOutput: One single ultra-realistic full-body fashion image with the requested background.';
   return prompt;
 }
 
-function buildCustomPrompt(clothing) {
+function buildCustomPrompt(options) {
+  const backgroundPrompt = resolveBackgroundPrompt(options);
   let prompt = `You are an advanced fashion image-generation AI.
 
 Task:
-Using the clothing from Image 1 as the only reference, generate a photorealistic full-body fashion image.
+Using the clothing from Image 1 as the only garment reference, generate a photorealistic full-body fashion image.${options.backgroundImageUrl ? '\nImage 2 is a background reference image.' : ''}
 
 Requirements:
 - Generate a realistic human model with natural body proportions
@@ -184,28 +231,35 @@ Requirements:
 - Ensure the clothing looks naturally worn and well-fitted, not pasted or floating
 - Show the model in full height (head to toe), with no cropping
 - Use a professional fashion model pose that clearly presents and advertises the clothing
-- Place the model on a completely pure white background (#FFFFFF)
-- Use soft, even studio lighting with clean, minimal shadows
+- Background scene: ${backgroundPrompt}
+${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 2 while keeping the model and clothing in clear focus' : '- Build the requested environment naturally around the model'}
 - Maintain realistic skin texture, natural colors, and sharp focus
 - Image resolution must be exactly 864 x 1232 pixels (portrait orientation)
 - Keep the result suitable for a professional fashion catalog or e-commerce listing
 - Avoid CGI, plastic skin, stylization, or artistic effects`;
 
-  if (clothing.user_prompt?.trim()) {
-    prompt += `\n\nADDITIONAL USER REQUIREMENTS:\n${clothing.user_prompt.trim()}`;
+  if (options.modelPrompt) {
+    prompt += `\n\nADDITIONAL USER REQUIREMENTS:\n${options.modelPrompt}`;
   }
 
-  prompt += '\n\nOutput: One single ultra-realistic full-body fashion image on a pure white background.';
+  prompt += '\n\nOutput: One single ultra-realistic full-body fashion image with the requested background.';
   return prompt;
 }
 
-function buildSelfiePrompt() {
+function buildSelfiePrompt(options) {
+  const backgroundPrompt = resolveBackgroundPrompt(options);
+  const totalImages = options.backgroundImageUrl ? 'FOUR' : 'THREE';
+  const backgroundImageLine = options.backgroundImageUrl ? '\n- Image 4: Background reference image' : '';
+  const backgroundInstruction = options.backgroundImageUrl
+    ? '- Match the environment, perspective, depth, and lighting direction from Image 4 while keeping the person fully visible and realistic'
+    : '- Build the requested environment naturally around the person while keeping the clothing clearly visible';
+
   return `You are an advanced AI fashion virtual try-on system.
 
-You receive THREE images:
+You receive ${totalImages} images:
 - Image 1: A clothing item (the garment to be worn)
 - Image 2: A close-up face photo of a real person
-- Image 3: A full-body photo of the same real person
+- Image 3: A full-body photo of the same real person${backgroundImageLine}
 
 Your task:
 Generate a single photorealistic full-body image of this exact real person wearing the clothing from Image 1.
@@ -224,13 +278,13 @@ Clothing requirements:
 Image requirements:
 - Full body visible from head to toe with no cropping
 - Natural standing pose
-- Pure white background (#FFFFFF)
-- Soft even studio lighting
+- Background scene: ${backgroundPrompt}
+${backgroundInstruction}
 - Photorealistic sharp focus with natural colors
 - Portrait orientation 864 x 1232 pixels
 - No CGI look, no stylization
 
-Output: One single ultra-realistic image of the real person wearing the garment on a pure white background.`;
+Output: One single ultra-realistic image of the real person wearing the garment in the requested background.`;
 }
 
 async function getClothingRecord(imageId) {
@@ -265,6 +319,8 @@ async function processImage(imageId) {
   assertConfig();
 
   const clothing = await getClothingRecord(imageId);
+  const generationOptions = parseGenerationOptions(clothing.user_prompt);
+
   await sbPatchById('clothing_images', imageId, {
     processing_started_at: new Date().toISOString(),
     status: 'processing',
@@ -283,13 +339,14 @@ async function processImage(imageId) {
       throw new Error('Selfie mode requires both selfie_face_url and selfie_body_url.');
     }
 
-    const [clothingImage, faceImage, bodyImage] = await Promise.all([
+    const imageInputs = await Promise.all([
       downloadAsBase64(clothing.file_url),
       downloadAsBase64(clothing.selfie_face_url),
       downloadAsBase64(clothing.selfie_body_url),
+      ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
     ]);
 
-    resultBuffer = await callGemini(buildSelfiePrompt(), [clothingImage, faceImage, bodyImage]);
+    resultBuffer = await callGemini(buildSelfiePrompt(generationOptions), imageInputs);
   } else if (clothing.model_preset) {
     let presetUrl = clothing.preset_image_url;
     if (!presetUrl) {
@@ -301,15 +358,19 @@ async function processImage(imageId) {
       throw new Error(`No preset image found for preset ${clothing.model_preset}.`);
     }
 
-    const [clothingImage, presetImage] = await Promise.all([
+    const imageInputs = await Promise.all([
       downloadAsBase64(clothing.file_url),
       downloadAsBase64(presetUrl),
+      ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
     ]);
 
-    resultBuffer = await callGemini(buildPresetPrompt(clothing), [clothingImage, presetImage]);
+    resultBuffer = await callGemini(buildPresetPrompt(generationOptions), imageInputs);
   } else {
-    const clothingImage = await downloadAsBase64(clothing.file_url);
-    resultBuffer = await callGemini(buildCustomPrompt(clothing), [clothingImage]);
+    const imageInputs = await Promise.all([
+      downloadAsBase64(clothing.file_url),
+      ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
+    ]);
+    resultBuffer = await callGemini(buildCustomPrompt(generationOptions), imageInputs);
   }
 
   const timestamp = Date.now();

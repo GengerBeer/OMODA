@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/lib/supabase';
 import {
   Camera,
@@ -19,7 +20,9 @@ import {
 import { toast } from 'sonner';
 
 const ANGLE_MODE_MARKER = '[ANGLE_MODE]';
+const GENERATION_OPTIONS_MARKER = '[OMODA_OPTIONS]';
 const POLLING_INTERVAL = 2000;
+const DEFAULT_BACKGROUND_PROMPT = 'Premium OMODA showroom interior with cinematic architectural lighting, polished floor reflections, refined luxury atmosphere, and a realistic editorial fashion backdrop.';
 
 const ANGLE_VARIANTS = [
   {
@@ -28,7 +31,7 @@ const ANGLE_VARIANTS = [
     prompt: `${ANGLE_MODE_MARKER}
 You are a fashion AI. The image provided shows a model already wearing clothing.
 Your task: recreate this exact same person wearing the exact same clothing, but show the FRONT VIEW.
-Preserve the same face, proportions, clothing details, white background and studio lighting.
+Preserve the same face, proportions, clothing details, background scene and lighting.
 Show the full body from head to toe. Output: 864x1232 pixels.`,
   },
   {
@@ -37,7 +40,7 @@ Show the full body from head to toe. Output: 864x1232 pixels.`,
     prompt: `${ANGLE_MODE_MARKER}
 You are a fashion AI. The image provided shows a model already wearing clothing.
 Your task: recreate this exact same person wearing the exact same clothing, but show a clean SIDE VIEW profile.
-Preserve the same face, proportions, clothing details, white background and studio lighting.
+Preserve the same face, proportions, clothing details, background scene and lighting.
 Show the full body from head to toe. Output: 864x1232 pixels.`,
   },
   {
@@ -46,7 +49,7 @@ Show the full body from head to toe. Output: 864x1232 pixels.`,
     prompt: `${ANGLE_MODE_MARKER}
 You are a fashion AI. The image provided shows a model already wearing clothing.
 Your task: recreate this exact same person wearing the exact same clothing, but show the BACK VIEW.
-Preserve the body proportions, garment details, white background and studio lighting.
+Preserve the body proportions, garment details, background scene and lighting.
 Show the full body from head to toe. Output: 864x1232 pixels.`,
   },
   {
@@ -55,7 +58,7 @@ Show the full body from head to toe. Output: 864x1232 pixels.`,
     prompt: `${ANGLE_MODE_MARKER}
 You are a fashion AI. The image provided shows a model already wearing clothing.
 Your task: recreate this exact same person wearing the exact same clothing, but show a 3/4 angle.
-Preserve the same face, proportions, clothing details, white background and studio lighting.
+Preserve the same face, proportions, clothing details, background scene and lighting.
 Show the full body from head to toe. Output: 864x1232 pixels.`,
   },
 ];
@@ -121,6 +124,16 @@ async function uploadIncomingFile(file: File, prefix: string) {
   return { fileName, publicUrl: data.publicUrl };
 }
 
+interface GenerationOptionsPayload {
+  modelPrompt: string | null;
+  backgroundPrompt: string | null;
+  backgroundImageUrl: string | null;
+}
+
+function buildGenerationOptionsPayload(options: GenerationOptionsPayload) {
+  return `${GENERATION_OPTIONS_MARKER}${JSON.stringify(options)}`;
+}
+
 export default function Index() {
   const user: { id: string; email?: string | null } | null = null;
   const profile: {
@@ -141,6 +154,9 @@ export default function Index() {
   const [facePreview, setFacePreview] = useState<string | null>(null);
   const [bodyFile, setBodyFile] = useState<File | null>(null);
   const [bodyPreview, setBodyPreview] = useState<string | null>(null);
+  const [backgroundDescription, setBackgroundDescription] = useState(DEFAULT_BACKGROUND_PROMPT);
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
+  const [backgroundPreview, setBackgroundPreview] = useState<string | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentImageId, setCurrentImageId] = useState<string | null>(null);
@@ -167,13 +183,13 @@ export default function Index() {
     if (mode === 'preset') {
       return {
         title: 'Preset and custom model mode',
-        description: 'Use Supabase model presets or describe a custom studio model for fast catalog shots.',
+        description: 'Use Supabase model presets, describe your own model, and control the background with text or a reference image.',
       };
     }
 
     return {
       title: 'On-yourself mode',
-      description: 'Upload your face and full-body photos to generate a personalized OMODA STUDIO try-on.',
+      description: 'Upload your face and full-body photos, then describe the background or attach a background reference image.',
     };
   }, [mode]);
 
@@ -419,7 +435,8 @@ export default function Index() {
     revokePreview(garmentPreview);
     revokePreview(facePreview);
     revokePreview(bodyPreview);
-  }, [bodyPreview, facePreview, garmentPreview]);
+    revokePreview(backgroundPreview);
+  }, [backgroundPreview, bodyPreview, facePreview, garmentPreview]);
 
   const handleGenerate = async () => {
     if (!garmentFile) {
@@ -448,11 +465,13 @@ export default function Index() {
 
     try {
       const garmentUpload = await uploadIncomingFile(garmentFile, 'garment');
+      const backgroundUpload = backgroundFile ? await uploadIncomingFile(backgroundFile, 'background') : null;
       let presetImageUrl: string | null = null;
       let selfieFaceUrl: string | null = null;
       let selfieBodyUrl: string | null = null;
       let modelPreset: string | null = selectedPreset || null;
-      let userPrompt: string | null = customModelPrompt.trim() || null;
+      let modelPrompt: string | null = customModelPrompt.trim() || null;
+      let userPrompt: string | null = null;
 
       if (mode === 'preset' && selectedPreset) {
         const { data: preset, error: presetError } = await supabase
@@ -475,11 +494,17 @@ export default function Index() {
         ]);
 
         modelPreset = 'user_selfie';
-        userPrompt = null;
+        modelPrompt = null;
         presetImageUrl = bodyUpload.publicUrl;
         selfieFaceUrl = faceUpload.publicUrl;
         selfieBodyUrl = bodyUpload.publicUrl;
       }
+
+      userPrompt = buildGenerationOptionsPayload({
+        modelPrompt,
+        backgroundPrompt: backgroundDescription.trim() || DEFAULT_BACKGROUND_PROMPT,
+        backgroundImageUrl: backgroundUpload?.publicUrl ?? null,
+      });
 
       const { data: insertData, error: insertError } = await supabase
         .from('clothing_images')
@@ -603,10 +628,14 @@ export default function Index() {
     handleGarmentClear();
     revokePreview(facePreview);
     revokePreview(bodyPreview);
+    revokePreview(backgroundPreview);
     setFaceFile(null);
     setFacePreview(null);
     setBodyFile(null);
     setBodyPreview(null);
+    setBackgroundFile(null);
+    setBackgroundPreview(null);
+    setBackgroundDescription(DEFAULT_BACKGROUND_PROMPT);
     setCustomModelPrompt('');
     setSelectedPreset('');
     setResultUrl(null);
@@ -812,6 +841,76 @@ export default function Index() {
                 </Card>
               </TabsContent>
             </Tabs>
+
+            <Card className="border-border/70">
+              <CardHeader>
+                <div className="flex flex-wrap items-center gap-3">
+                  <CardTitle className="text-xl">Background</CardTitle>
+                  <Badge variant="outline">Text or image</Badge>
+                </div>
+                <CardDescription>
+                  Keep the restored OMODA background prompt, rewrite it yourself, or upload a background reference image.
+                  If you use both, the image sets the scene and the text fine-tunes it.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Background description</label>
+                  <Textarea
+                    value={backgroundDescription}
+                    onChange={(event) => setBackgroundDescription(event.target.value)}
+                    className="min-h-[140px] resize-none"
+                    placeholder="Describe the scene, atmosphere, architecture, props, and lighting you want behind the model."
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Default: premium OMODA showroom mood. Rewrite this field if you want a different location or style.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Background reference image</p>
+                  {backgroundPreview ? (
+                    <div className="space-y-3">
+                      <img
+                        src={backgroundPreview}
+                        alt="Background reference"
+                        className="h-48 w-full rounded-2xl border border-border object-cover"
+                      />
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-full"
+                        onClick={() => {
+                          revokePreview(backgroundPreview);
+                          setBackgroundFile(null);
+                          setBackgroundPreview(null);
+                        }}
+                      >
+                        Remove Background Image
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="upload-zone flex cursor-pointer flex-col items-center gap-3 rounded-2xl py-8 text-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <Upload className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Upload background image</p>
+                        <p className="text-sm text-muted-foreground">Optional JPG, PNG or WEBP reference</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => handlePreviewFile(event.target.files?.[0], backgroundPreview, setBackgroundFile, setBackgroundPreview)}
+                      />
+                    </label>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Use this when you want the output placed into a specific environment, interior, or campaign scene.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </section>
           <section className="space-y-4">
             <SectionHeading number="3" title="Generate" subtitle={generationSummary.title} />
