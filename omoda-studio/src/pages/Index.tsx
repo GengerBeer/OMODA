@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { createStudioPortraitBlob, createTurntableVideoBlob, downloadBlob, fetchAssetBlob } from '@/lib/studioPack';
 import { supabase } from '@/lib/supabase';
 import {
   Camera,
@@ -168,16 +169,29 @@ export default function Index() {
   const [angleResults, setAngleResults] = useState<AngleResult[]>([]);
   const [isGeneratingAngles, setIsGeneratingAngles] = useState(false);
   const [anglePollingIds, setAnglePollingIds] = useState<Record<string, string>>({});
+  const [portraitCropUrl, setPortraitCropUrl] = useState<string | null>(null);
+  const [turntableVideoUrl, setTurntableVideoUrl] = useState<string | null>(null);
+  const [isPreparingPortraitCrop, setIsPreparingPortraitCrop] = useState(false);
+  const [isGeneratingTurntable, setIsGeneratingTurntable] = useState(false);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const resultRef = useRef<HTMLDivElement>(null);
   const anglesRef = useRef<HTMLDivElement>(null);
+  const generatedPortraitRef = useRef<string | null>(null);
+  const generatedVideoRef = useRef<string | null>(null);
 
   const canGeneratePreset = !!garmentFile && (!!selectedPreset || !!customModelPrompt.trim());
   const canGenerateSelfie = !!garmentFile && !!faceFile && !!bodyFile;
   const canGenerate = mode === 'preset' ? canGeneratePreset : canGenerateSelfie;
+  const readyAngleMap = useMemo(() => Object.fromEntries(
+    angleResults
+      .filter((item) => !!item.url)
+      .map((item) => [item.key, item.url]),
+  ) as Record<string, string>, [angleResults]);
+  const completedAngleCount = angleResults.filter((item) => !!item.url).length;
+  const allAnglesReady = angleResults.length === ANGLE_VARIANTS.length && angleResults.every((item) => !!item.url);
 
   const generationSummary = useMemo(() => {
     if (mode === 'preset') {
@@ -219,6 +233,19 @@ export default function Index() {
     revokePreview(previousPreview);
     setFile(file);
     setPreview(URL.createObjectURL(file));
+  }, []);
+
+  const replaceGeneratedAsset = useCallback((kind: 'portrait' | 'video', nextUrl: string | null) => {
+    if (kind === 'portrait') {
+      revokePreview(generatedPortraitRef.current);
+      generatedPortraitRef.current = nextUrl;
+      setPortraitCropUrl(nextUrl);
+      return;
+    }
+
+    revokePreview(generatedVideoRef.current);
+    generatedVideoRef.current = nextUrl;
+    setTurntableVideoUrl(nextUrl);
   }, []);
 
   const loadHistory = useCallback(async () => {
@@ -342,7 +369,7 @@ export default function Index() {
         }
 
         void loadHistory();
-        toast.success('Your OMODA STUDIO look is ready.');
+        toast.success('Base render ready. OMODA STUDIO is now assembling the studio pack.');
 
         setTimeout(() => {
           resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -431,11 +458,100 @@ export default function Index() {
     return () => window.clearInterval(interval);
   }, [anglePollingIds]);
 
+  useEffect(() => {
+    if (!resultUrl || angleResults.length > 0 || isGeneratingAngles || Object.keys(anglePollingIds).length > 0) {
+      return;
+    }
+
+    void queueAngleGeneration(resultUrl, true);
+  }, [anglePollingIds, angleResults.length, isGeneratingAngles, queueAngleGeneration, resultUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!resultUrl) {
+      replaceGeneratedAsset('portrait', null);
+      setIsPreparingPortraitCrop(false);
+      return undefined;
+    }
+
+    setIsPreparingPortraitCrop(true);
+
+    void createStudioPortraitBlob(resultUrl)
+      .then((blob) => {
+        if (!isActive) {
+          return;
+        }
+
+        replaceGeneratedAsset('portrait', URL.createObjectURL(blob));
+      })
+      .catch((error) => {
+        console.error('Failed to prepare portrait crop:', error);
+        toast.error('Portrait crop generation failed.');
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsPreparingPortraitCrop(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [replaceGeneratedAsset, resultUrl]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!resultUrl || !allAnglesReady) {
+      replaceGeneratedAsset('video', null);
+      setIsGeneratingTurntable(false);
+      return undefined;
+    }
+
+    const turntableFrames = [
+      resultUrl,
+      readyAngleMap.three_quarter,
+      readyAngleMap.side,
+      readyAngleMap.back,
+      readyAngleMap.side,
+      readyAngleMap.three_quarter,
+      resultUrl,
+    ].filter(Boolean) as string[];
+
+    setIsGeneratingTurntable(true);
+
+    void createTurntableVideoBlob(turntableFrames)
+      .then((blob) => {
+        if (!isActive) {
+          return;
+        }
+
+        replaceGeneratedAsset('video', URL.createObjectURL(blob));
+        toast.success('Turntable video is ready.');
+      })
+      .catch((error) => {
+        console.error('Failed to create turntable video:', error);
+        toast.error('Turntable video generation failed in this browser.');
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsGeneratingTurntable(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [allAnglesReady, readyAngleMap, replaceGeneratedAsset, resultUrl]);
+
   useEffect(() => () => {
     revokePreview(garmentPreview);
     revokePreview(facePreview);
     revokePreview(bodyPreview);
     revokePreview(backgroundPreview);
+    revokePreview(generatedPortraitRef.current);
+    revokePreview(generatedVideoRef.current);
   }, [backgroundPreview, bodyPreview, facePreview, garmentPreview]);
 
   const handleGenerate = async () => {
@@ -557,8 +673,8 @@ export default function Index() {
     }
   };
 
-  const handleGenerateAngles = async () => {
-    if (!resultUrl) {
+  async function queueAngleGeneration(sourceUrl: string, silent = false) {
+    if (!sourceUrl || isGeneratingAngles || angleResults.length > 0 || Object.keys(anglePollingIds).length > 0) {
       return;
     }
 
@@ -585,7 +701,7 @@ export default function Index() {
           .insert({
             user_id: null,
             file_name: `angle_${variant.key}_${Date.now()}.png`,
-            file_url: resultUrl,
+            file_url: sourceUrl,
             processed: false,
             status: 'pending',
             error_message: null,
@@ -621,7 +737,18 @@ export default function Index() {
 
     setAnglePollingIds(pendingIds);
     setIsGeneratingAngles(false);
-    toast.success('Angle generation queued. Results will appear as they finish.');
+
+    if (!silent) {
+      toast.success('Studio pack angles queued. Results will appear as they finish.');
+    }
+  }
+
+  const handleGenerateAngles = async () => {
+    if (!resultUrl) {
+      return;
+    }
+
+    await queueAngleGeneration(resultUrl);
   };
 
   const handleReset = () => {
@@ -629,6 +756,8 @@ export default function Index() {
     revokePreview(facePreview);
     revokePreview(bodyPreview);
     revokePreview(backgroundPreview);
+    replaceGeneratedAsset('portrait', null);
+    replaceGeneratedAsset('video', null);
     setFaceFile(null);
     setFacePreview(null);
     setBodyFile(null);
@@ -643,6 +772,8 @@ export default function Index() {
     setCurrentImageId(null);
     setIsGenerating(false);
     setIsPolling(false);
+    setIsPreparingPortraitCrop(false);
+    setIsGeneratingTurntable(false);
     setAngleResults([]);
     setAnglePollingIds({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -689,8 +820,8 @@ export default function Index() {
                 Merge preset styling and personal try-on into one premium studio workflow.
               </h1>
               <p className="max-w-2xl text-lg text-muted-foreground">
-                Upload a garment once, choose a preset model or your own photos, then generate clean catalog shots
-                and extra angle views from the same result.
+                Upload a garment once, choose a preset model or your own photos, then generate a full studio pack
+                with hero crop, angle views, and a turntable preview from the same result.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -733,7 +864,7 @@ export default function Index() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                   3
                 </span>
-                <p>Send everything to one backend and one Supabase project prepared for the new repo and deployment.</p>
+                <p>One generation now expands into a studio pack with cropped catalog assets, angle views, and a short turntable export.</p>
               </div>
             </CardContent>
           </Card>
@@ -925,15 +1056,15 @@ export default function Index() {
                 ) : (
                   <>
                     <Sparkles className="mr-2 h-5 w-5" />
-                    Generate OMODA Look
+                    Generate Studio Pack
                   </>
                 )}
               </Button>
 
               <p className="text-sm text-muted-foreground">
                 {mode === 'preset'
-                  ? 'Preset mode works for guests and signed-in users.'
-                  : 'Selfie mode needs both reference photos, but no sign-in.'}
+                  ? 'One click produces the base look, cropped hero, angle views, and a turntable preview.'
+                  : 'Selfie mode still needs both reference photos, then the studio pack is assembled automatically.'}
               </p>
             </div>
           </section>
@@ -991,24 +1122,43 @@ export default function Index() {
 
                   <Card className="border-border/70">
                     <CardHeader>
-                      <CardTitle className="text-xl">What you can do next</CardTitle>
+                      <CardTitle className="text-xl">Studio Pack Status</CardTitle>
                       <CardDescription>
-                        Download the final render or create additional angle views from the same generated image.
+                        One click now assembles the base look, cropped hero, angle views, and a short turntable video.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      <div className="space-y-3 rounded-2xl bg-secondary/50 p-4 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Base render</span>
+                          <Badge variant="secondary">Ready</Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Portrait crop</span>
+                          <Badge variant={portraitCropUrl ? 'secondary' : 'outline'}>{portraitCropUrl ? 'Ready' : isPreparingPortraitCrop ? 'Preparing' : 'Waiting'}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Angle views</span>
+                          <Badge variant={completedAngleCount === ANGLE_VARIANTS.length ? 'secondary' : 'outline'}>{completedAngleCount}/{ANGLE_VARIANTS.length}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Turntable video</span>
+                          <Badge variant={turntableVideoUrl ? 'secondary' : 'outline'}>{turntableVideoUrl ? 'Ready' : isGeneratingTurntable ? 'Rendering' : 'Waiting'}</Badge>
+                        </div>
+                      </div>
+
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Button
                           variant="outline"
                           className="h-12 rounded-full"
                           onClick={() => {
-                            void downloadImage(resultUrl, `omoda-studio-${Date.now()}.png`)
-                              .then(() => toast.success('Image downloaded.'))
+                            void downloadImage(resultUrl, `omoda-studio-main-look-${Date.now()}.png`)
+                              .then(() => toast.success('Main render downloaded.'))
                               .catch(() => toast.error('Download failed.'));
                           }}
                         >
                           <Download className="mr-2 h-4 w-4" />
-                          Download
+                          Download Main Look
                         </Button>
                         <Button
                           variant="outline"
@@ -1024,16 +1174,38 @@ export default function Index() {
                           ) : (
                             <>
                               <Camera className="mr-2 h-4 w-4" />
-                              {angleResults.length > 0 ? 'Angles Requested' : 'Generate Angle Views'}
+                              {angleResults.length > 0 ? 'Angles Auto-Building' : 'Generate Angles Now'}
                             </>
                           )}
                         </Button>
                       </div>
 
-                      <Button className="h-12 rounded-full" onClick={handleReset}>
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Start Another Look
-                      </Button>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Button
+                          variant="outline"
+                          className="h-12 rounded-full"
+                          disabled={!portraitCropUrl}
+                          onClick={async () => {
+                            if (!portraitCropUrl) {
+                              return;
+                            }
+
+                            try {
+                              downloadBlob(await fetchAssetBlob(portraitCropUrl), `omoda-studio-hero-crop-${Date.now()}.jpg`);
+                              toast.success('Hero crop downloaded.');
+                            } catch {
+                              toast.error('Download failed.');
+                            }
+                          }}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Download Hero Crop
+                        </Button>
+                        <Button className="h-12 rounded-full" variant="outline" onClick={handleReset}>
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Start Another Look
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1041,9 +1213,69 @@ export default function Index() {
             </section>
           )}
 
+          {resultUrl && (
+            <section className="space-y-6 border-t border-border/80 pt-8">
+              <SectionHeading number="5" title="Studio Pack" subtitle="The app now builds the same final asset family automatically: full body render, cropped hero, and a short turntable preview." />
+
+              <div className="grid gap-4 lg:grid-cols-3">
+                <Card className="overflow-hidden border-border/70">
+                  <div className="relative aspect-[3/4] bg-muted">
+                    <img src={resultUrl} alt="Main studio render" className="h-full w-full object-cover" />
+                  </div>
+                  <CardContent className="space-y-2 pt-4">
+                    <p className="font-medium">Main Full-Body Render</p>
+                    <p className="text-sm text-muted-foreground">Primary studio image for catalog and campaign use.</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-border/70">
+                  <div className="relative aspect-[3/4] bg-muted">
+                    {portraitCropUrl ? (
+                      <img src={portraitCropUrl} alt="Portrait crop" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="skeleton-shimmer absolute inset-0 flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Preparing hero crop...</p>
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="space-y-2 pt-4">
+                    <p className="font-medium">Catalog Crop</p>
+                    <p className="text-sm text-muted-foreground">Upper-body crop aligned to the reference style in your sample folder.</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="overflow-hidden border-border/70">
+                  <div className="relative aspect-[3/4] bg-muted">
+                    {turntableVideoUrl ? (
+                      <video
+                        src={turntableVideoUrl}
+                        className="h-full w-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        controls
+                      />
+                    ) : (
+                      <div className="skeleton-shimmer absolute inset-0 flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Building turntable video...</p>
+                      </div>
+                    )}
+                  </div>
+                  <CardContent className="space-y-2 pt-4">
+                    <p className="font-medium">Turntable Video</p>
+                    <p className="text-sm text-muted-foreground">Short rotating showcase built from the finished angle set.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </section>
+          )}
+
           {angleResults.length > 0 && (
             <section ref={anglesRef} className="space-y-6 border-t border-border/80 pt-8">
-              <SectionHeading number="5" title="Angle Views" subtitle="Each card updates independently as the backend finishes new variants." />
+              <SectionHeading number="6" title="Angle Views" subtitle="Each card updates independently while the studio pack finishes the generated variants." />
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {angleResults.map((item) => (
@@ -1102,7 +1334,7 @@ export default function Index() {
 
           {user && (
             <section className="space-y-6 border-t border-border/80 pt-8">
-              <SectionHeading number="6" title="Your History" subtitle="Recent signed-in generations from the merged OMODA STUDIO flow." />
+              <SectionHeading number="7" title="Your History" subtitle="Recent signed-in generations from the merged OMODA STUDIO flow." />
 
               {historyLoading ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
