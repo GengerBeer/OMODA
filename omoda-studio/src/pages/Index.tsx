@@ -81,8 +81,9 @@ interface HistoryItem {
 }
 
 function buildWebhookUrl() {
-  const configuredBase = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  const configuredBase = import.meta.env.VITE_BACKEND_URL || '/api/process';
   return configuredBase.endsWith('/webhook/process')
+    || configuredBase.endsWith('/api/process')
     ? configuredBase
     : `${configuredBase.replace(/\/$/, '')}/webhook/process`;
 }

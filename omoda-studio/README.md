@@ -69,6 +69,27 @@ npm install
 npm run dev
 ```
 
+## Vercel Deploy
+
+Frontend and processing webhook can live in one Vercel project because [`api/process.ts`](./api/process.ts) is a Vercel Function.
+
+Add these environment variables in Vercel:
+
+```bash
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+SUPABASE_URL=...
+SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_KEY=...
+GEMINI_API_KEY=...
+```
+
+Important:
+
+- `VITE_BACKEND_URL` is optional on Vercel and should usually be left empty
+- add your Vercel domain to Supabase Auth redirect URLs for Google login
+- [`vercel.json`](./vercel.json) already pins the function timeout for `api/process.ts`
+
 ## Supabase Setup
 
 1. Create a new Supabase project for `OMODA STUDIO`.

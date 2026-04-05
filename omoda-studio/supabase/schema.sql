@@ -50,11 +50,64 @@ create table if not exists public.generated_models (
   created_at timestamptz not null default now()
 );
 
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_user_profiles_updated_at on public.user_profiles;
+create trigger set_user_profiles_updated_at
+before update on public.user_profiles
+for each row
+execute function public.set_updated_at();
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.user_profiles (
+    id,
+    email,
+    full_name,
+    avatar_url
+  )
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
+    coalesce(new.raw_user_meta_data ->> 'avatar_url', new.raw_user_meta_data ->> 'picture')
+  )
+  on conflict (id) do update
+  set
+    email = excluded.email,
+    full_name = coalesce(excluded.full_name, public.user_profiles.full_name),
+    avatar_url = coalesce(excluded.avatar_url, public.user_profiles.avatar_url);
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row
+execute function public.handle_new_user();
 create index if not exists clothing_images_user_id_idx on public.clothing_images(user_id);
 create index if not exists clothing_images_uploaded_at_idx on public.clothing_images(uploaded_at desc);
 create index if not exists generated_models_original_image_id_idx on public.generated_models(original_image_id);
 
 alter table public.user_profiles enable row level security;
+alter table public.clothing_images enable row level security;
+alter table public.clothing_presets enable row level security;
+alter table public.generated_models enable row level security;
 
 drop policy if exists "Users can view own profile" on public.user_profiles;
 create policy "Users can view own profile"
@@ -73,6 +126,63 @@ create policy "Users can insert own profile"
   on public.user_profiles
   for insert
   with check (auth.uid() = id);
+
+drop policy if exists "Public read clothing presets" on public.clothing_presets;
+create policy "Public read clothing presets"
+  on public.clothing_presets
+  for select
+  using (true);
+
+drop policy if exists "Authenticated users can view own clothing images" on public.clothing_images;
+create policy "Authenticated users can view own clothing images"
+  on public.clothing_images
+  for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Anonymous users can view anonymous clothing images" on public.clothing_images;
+create policy "Anonymous users can view anonymous clothing images"
+  on public.clothing_images
+  for select
+  using (auth.uid() is null and user_id is null);
+
+drop policy if exists "Authenticated users can insert own clothing images" on public.clothing_images;
+create policy "Authenticated users can insert own clothing images"
+  on public.clothing_images
+  for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Anonymous users can insert anonymous clothing images" on public.clothing_images;
+create policy "Anonymous users can insert anonymous clothing images"
+  on public.clothing_images
+  for insert
+  with check (auth.uid() is null and user_id is null);
+
+drop policy if exists "Authenticated users can view own generated models" on public.generated_models;
+create policy "Authenticated users can view own generated models"
+  on public.generated_models
+  for select
+  using (
+    exists (
+      select 1
+      from public.clothing_images ci
+      where ci.id = original_image_id
+        and ci.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Anonymous users can view anonymous generated models" on public.generated_models;
+create policy "Anonymous users can view anonymous generated models"
+  on public.generated_models
+  for select
+  using (
+    auth.uid() is null
+    and exists (
+      select 1
+      from public.clothing_images ci
+      where ci.id = original_image_id
+        and ci.user_id is null
+    )
+  );
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
@@ -101,10 +211,6 @@ create policy "Public read clothing-presets"
   using (bucket_id = 'clothing-presets');
 
 drop policy if exists "Service upload clothing-presets" on storage.objects;
-create policy "Service upload clothing-presets"
-  on storage.objects
-  for insert
-  with check (bucket_id = 'clothing-presets');
 
 drop policy if exists "Public read clothing-output" on storage.objects;
 create policy "Public read clothing-output"
@@ -113,10 +219,6 @@ create policy "Public read clothing-output"
   using (bucket_id = 'clothing-output');
 
 drop policy if exists "Service upload clothing-output" on storage.objects;
-create policy "Service upload clothing-output"
-  on storage.objects
-  for insert
-  with check (bucket_id = 'clothing-output');
 
 drop policy if exists "Public read clothing-angles" on storage.objects;
 create policy "Public read clothing-angles"
@@ -125,7 +227,5 @@ create policy "Public read clothing-angles"
   using (bucket_id = 'clothing-angles');
 
 drop policy if exists "Service upload clothing-angles" on storage.objects;
-create policy "Service upload clothing-angles"
-  on storage.objects
-  for insert
-  with check (bucket_id = 'clothing-angles');
+-- Service-role requests bypass RLS, so we intentionally do not grant client
+-- insert access for presets, output, or angle buckets.
