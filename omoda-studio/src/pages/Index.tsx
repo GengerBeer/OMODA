@@ -733,25 +733,18 @@ export default function Index() {
           <div className="space-y-1">
             <div className="flex items-center gap-3">
               <span className="text-xl font-semibold tracking-[0.28em] uppercase">OMODA STUDIO</span>
-              <Badge variant="secondary">Merged Try-On Platform</Badge>
-            </div>
+                          </div>
             <p className="text-sm text-muted-foreground">
               Preset studio looks and personal selfie try-on in one flow.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Badge className="rounded-full px-4 py-2">Premium Try-On</Badge>
-          </div>
         </div>
       </header>
 
       <main className="container py-10 sm:py-14">
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div className="space-y-6">
-            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">
-              One repo. One Supabase. One OMODA STUDIO.
-            </Badge>
             <div className="space-y-4">
               <h1 className="max-w-3xl text-balance text-4xl font-semibold leading-tight sm:text-5xl">
                 Merge preset styling and personal try-on into one premium studio workflow.
