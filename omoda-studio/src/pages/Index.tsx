@@ -5,18 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import {
   Camera,
   Check,
   Download,
   Loader2,
-  LogOut,
   RotateCcw,
   Sparkles,
   Upload,
-  User,
   Wand2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -125,16 +122,15 @@ async function uploadIncomingFile(file: File, prefix: string) {
 }
 
 export default function Index() {
-  const {
-    user,
-    profile,
-    loading,
-    signInWithGoogle,
-    signOut,
-    canUseSelfieMode,
-    personalGenerationsLeft,
-    refetchProfile,
-  } = useAuth();
+  const user: { id: string; email?: string | null } | null = null;
+  const profile: {
+    avatar_url?: string | null;
+    full_name?: string | null;
+    generations_used?: number;
+    generations_limit?: number;
+  } | null = null;
+  const loading = false;
+  const refetchProfile = () => {};
 
   const [mode, setMode] = useState<GenerationMode>('preset');
   const [garmentFile, setGarmentFile] = useState<File | null>(null);
@@ -164,7 +160,7 @@ export default function Index() {
   const anglesRef = useRef<HTMLDivElement>(null);
 
   const canGeneratePreset = !!garmentFile && (!!selectedPreset || !!customModelPrompt.trim());
-  const canGenerateSelfie = !!garmentFile && !!faceFile && !!bodyFile && !!user && canUseSelfieMode;
+  const canGenerateSelfie = !!garmentFile && !!faceFile && !!bodyFile;
   const canGenerate = mode === 'preset' ? canGeneratePreset : canGenerateSelfie;
 
   const generationSummary = useMemo(() => {
@@ -436,21 +432,9 @@ export default function Index() {
       return;
     }
 
-    if (mode === 'selfie') {
-      if (!user) {
-        toast.error('Sign in with Google to use On Yourself mode.');
-        return;
-      }
-
-      if (!canUseSelfieMode) {
-        toast.error('You have used all personal try-ons for this profile.');
-        return;
-      }
-
-      if (!faceFile || !bodyFile) {
-        toast.error('Upload both a face photo and a full body photo.');
-        return;
-      }
+    if (mode === 'selfie' && (!faceFile || !bodyFile)) {
+      toast.error('Upload both a face photo and a full body photo.');
+      return;
     }
 
     setIsGenerating(true);
@@ -500,7 +484,7 @@ export default function Index() {
       const { data: insertData, error: insertError } = await supabase
         .from('clothing_images')
         .insert({
-          user_id: user?.id ?? null,
+          user_id: null,
           file_name: garmentUpload.fileName,
           file_url: garmentUpload.publicUrl,
           processed: false,
@@ -574,7 +558,7 @@ export default function Index() {
         const { data, error } = await supabase
           .from('clothing_images')
           .insert({
-            user_id: user?.id ?? null,
+            user_id: null,
             file_name: `angle_${variant.key}_${Date.now()}.png`,
             file_url: resultUrl,
             processed: false,
@@ -660,42 +644,11 @@ export default function Index() {
           </div>
 
           <div className="flex items-center gap-3">
-            {user ? (
-              <>
-                <div className="hidden rounded-full border border-border/80 bg-card px-4 py-2 text-sm sm:flex sm:items-center sm:gap-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="font-medium">{personalGenerationsLeft}</span>
-                  <span className="text-muted-foreground">personal credits left</span>
-                </div>
-                <div className="flex items-center gap-2 rounded-full bg-secondary px-3 py-2">
-                  {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.full_name || user.email || 'Profile'}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <User className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
-                  <div className="hidden sm:block">
-                    <p className="text-sm font-medium leading-none">
-                      {profile?.full_name || user.email || 'Signed in'}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">Google account connected</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={signOut}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button onClick={signInWithGoogle} className="rounded-full px-5">
-                <GoogleIcon />
-                Sign in for personal try-on
-              </Button>
-            )}
+            <div className="hidden rounded-full border border-border/80 bg-card px-4 py-2 text-sm sm:flex sm:items-center sm:gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-medium">Guest mode enabled</span>
+            </div>
+            <Badge className="rounded-full px-4 py-2">No Google Sign-In</Badge>
           </div>
         </div>
       </header>
@@ -722,7 +675,7 @@ export default function Index() {
               />
               <FeatureCard
                 title="On Yourself"
-                description="Google sign-in plus face and body references for personalized try-on."
+                description="Guest-friendly selfie mode with face and body references, no account required."
               />
               <FeatureCard
                 title="Angle Views"
@@ -813,26 +766,19 @@ export default function Index() {
                   <CardHeader>
                     <div className="flex flex-wrap items-center gap-3">
                       <CardTitle className="text-xl">Personal try-on with your own photos</CardTitle>
-                      <Badge>Uses 1 personal credit</Badge>
+                      <Badge variant="secondary">Guest-friendly</Badge>
                     </div>
                     <CardDescription>
-                      This mode combines the garment with your face and full-body references. Google sign-in keeps the
-                      credits and history tied to your profile.
+                      This mode combines the garment with your face and full-body references without requiring Google sign-in or account setup.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {!user && (
-                      <div className="rounded-2xl border border-dashed border-border bg-secondary/40 p-6 text-center">
-                        <p className="text-base font-medium">Sign in to unlock personal try-on.</p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          The unified OMODA STUDIO flow keeps preset mode open to guests and selfie mode behind Google auth.
-                        </p>
-                        <Button onClick={signInWithGoogle} className="mt-4 rounded-full px-5">
-                          <GoogleIcon />
-                          Sign in with Google
-                        </Button>
-                      </div>
-                    )}
+                    <div className="rounded-2xl border border-dashed border-border bg-secondary/40 p-6 text-center">
+                      <p className="text-base font-medium">Guest selfie mode is active.</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Upload a clear face photo and a full-body photo. The try-on now works without Google registration.
+                      </p>
+                    </div>
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <PhotoUploadCard
@@ -859,17 +805,9 @@ export default function Index() {
                       />
                     </div>
 
-                    {user && (
-                      <div className="rounded-2xl bg-secondary/50 px-4 py-3 text-sm text-muted-foreground">
-                        {canUseSelfieMode ? (
-                          <span>
-                            {personalGenerationsLeft} personal credits remaining on this account.
-                          </span>
-                        ) : (
-                          <span>You have no personal credits left on this account yet.</span>
-                        )}
-                      </div>
-                    )}
+                    <div className="rounded-2xl bg-secondary/50 px-4 py-3 text-sm text-muted-foreground">
+                      Guest mode stores only the files needed for this generation. No Google account is required.
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -900,7 +838,7 @@ export default function Index() {
               <p className="text-sm text-muted-foreground">
                 {mode === 'preset'
                   ? 'Preset mode works for guests and signed-in users.'
-                  : 'Selfie mode needs Google sign-in plus both reference photos.'}
+                  : 'Selfie mode needs both reference photos, but no sign-in.'}
               </p>
             </div>
           </section>
@@ -1206,13 +1144,5 @@ function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: 
   );
 }
 
-function GoogleIcon() {
-  return (
-    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.02 5.02 0 0 1-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09Z" />
-      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
-      <path fill="currentColor" d="M5.84 14.09A6.7 6.7 0 0 1 5.49 12c0-.73.13-1.43.35-2.09V7.07H2.18A11.02 11.02 0 0 0 1 12c0 1.78.43 3.45 1.18 4.93l4.66-2.84Z" />
-      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53Z" />
-    </svg>
-  );
-}
+
+
