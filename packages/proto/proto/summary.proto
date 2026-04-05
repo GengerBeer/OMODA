@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package newstok.summary;
+
+service SummaryService {
+  rpc SummarizeArticle (SummarizeArticleRequest) returns (SummarizeArticleResponse);
+}
+
+message SummarizeArticleRequest {
+  string articleId = 1;
+  string title = 2;
+  string body = 3;
+}
+
+message SummarizeArticleResponse {
+  string title = 1;
+  string summaryShort = 2;
+  string category = 3;
+}

@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.env.local
+.pnpm-store/
+coverage/
+*.log
+pnpm-lock.yaml
+
+# Docker
+infra/.data/
+
+# Xcode
+DerivedData/
+*.xcuserstate
+xcuserdata/
+

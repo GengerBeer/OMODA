@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package newstok.profile;
+
+service ProfileService {
+  rpc GetProfile (GetProfileRequest) returns (ProfileResponse);
+  rpc UpdateTopics (UpdateTopicsRequest) returns (ProfileResponse);
+}
+
+message GetProfileRequest {
+  string userId = 1;
+}
+
+message UpdateTopicsRequest {
+  string userId = 1;
+  repeated string selectedTopics = 2;
+}
+
+message InterestWeight {
+  string category = 1;
+  double score = 2;
+}
+
+message ProfileResponse {
+  string userId = 1;
+  repeated string selectedTopics = 2;
+  repeated InterestWeight interestWeights = 3;
+}

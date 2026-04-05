@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package newstok.feed;
+
+service FeedService {
+  rpc GetFeed (GetFeedRequest) returns (GetFeedResponse);
+}
+
+message GetFeedRequest {
+  string userId = 1;
+  int32 limit = 2;
+  string cursor = 3;
+}
+
+message FeedSummaryMessage {
+  string title = 1;
+  string summaryShort = 2;
+  string category = 3;
+}
+
+message FeedArticleMessage {
+  string id = 1;
+  string source = 2;
+  string title = 3;
+  string body = 4;
+  string imageUrl = 5;
+  string publishedAt = 6;
+  FeedSummaryMessage summary = 7;
+}
+
+message FeedItemMessage {
+  string articleId = 1;
+  double score = 2;
+  string reason = 3;
+  FeedArticleMessage article = 4;
+}
+
+message GetFeedResponse {
+  repeated FeedItemMessage items = 1;
+  string nextCursor = 2;
+}

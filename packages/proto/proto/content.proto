@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package newstok.content;
+
+service ContentService {
+  rpc ListArticles (ListArticlesRequest) returns (ListArticlesResponse);
+  rpc GetArticle (GetArticleRequest) returns (ArticleMessage);
+}
+
+message ListArticlesRequest {
+  int32 limit = 1;
+  string cursor = 2;
+}
+
+message GetArticleRequest {
+  string articleId = 1;
+}
+
+message ArticleSummaryMessage {
+  string title = 1;
+  string summaryShort = 2;
+  string category = 3;
+}
+
+message ArticleMessage {
+  string id = 1;
+  string source = 2;
+  string title = 3;
+  string body = 4;
+  string imageUrl = 5;
+  string publishedAt = 6;
+  ArticleSummaryMessage summary = 7;
+}
+
+message ListArticlesResponse {
+  repeated ArticleMessage items = 1;
+  string nextCursor = 2;
+}

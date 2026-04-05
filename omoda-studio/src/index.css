@@ -1,0 +1,220 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Omoda Virtual Try-On Design System
+   Clean, minimal fashion-tech aesthetic with neutral tones */
+
+@layer base {
+  :root {
+    /* Core neutrals - warm grays for fashion aesthetic */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 12%;
+
+    /* Primary - elegant charcoal */
+    --primary: 0 0% 15%;
+    --primary-foreground: 0 0% 98%;
+
+    /* Secondary - subtle warm gray */
+    --secondary: 30 5% 96%;
+    --secondary-foreground: 0 0% 20%;
+
+    /* Muted - soft background tones */
+    --muted: 30 5% 94%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Accent - warm highlight */
+    --accent: 30 10% 92%;
+    --accent-foreground: 0 0% 15%;
+
+    /* Success - subtle green for confirmations */
+    --success: 150 40% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning - soft amber */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 10%;
+
+    /* Destructive - muted red */
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 10% 90%;
+    --input: 30 10% 90%;
+    --ring: 0 0% 15%;
+
+    --radius: 0.625rem;
+
+    /* Custom shadows */
+    --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.04);
+    --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.06);
+    --shadow-lg: 0 8px 24px hsl(0 0% 0% / 0.08);
+    --shadow-xl: 0 16px 48px hsl(0 0% 0% / 0.1);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 25%;
+    --sidebar-primary: 0 0% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 30 5% 95%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 30 10% 91%;
+    --sidebar-ring: 0 0% 15%;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 90%;
+
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 95%;
+
+    --success: 150 40% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 80% 45%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 55% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 80%;
+
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 0% 90%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 80%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  /* Typography scale */
+  h1 {
+    @apply text-3xl sm:text-4xl font-semibold tracking-tight;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl font-semibold tracking-tight;
+  }
+
+  h3 {
+    @apply text-xl font-medium;
+  }
+}
+
+@layer components {
+  /* Upload zone styling */
+  .upload-zone {
+    @apply relative border-2 border-dashed border-border rounded-xl p-8 transition-all duration-200;
+    @apply hover:border-foreground/30 hover:bg-accent/50;
+  }
+
+  .upload-zone.active {
+    @apply border-primary bg-accent;
+  }
+
+  /* Preset card styling */
+  .preset-card {
+    @apply relative overflow-hidden rounded-lg border border-border bg-card transition-all duration-200 cursor-pointer;
+    @apply hover:shadow-md hover:border-foreground/20;
+  }
+
+  .preset-card.selected {
+    @apply ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Status stepper */
+  .stepper-item {
+    @apply flex items-center gap-2;
+  }
+
+  .stepper-dot {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all;
+  }
+
+  .stepper-dot.completed {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .stepper-dot.active {
+    @apply bg-primary text-primary-foreground animate-pulse;
+  }
+
+  .stepper-dot.pending {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Variant card styling */
+  .variant-card {
+    @apply relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 cursor-pointer;
+    @apply hover:shadow-lg hover:border-foreground/20;
+  }
+
+  .variant-card.selected {
+    @apply ring-2 ring-success ring-offset-2 border-success;
+  }
+
+  /* Skeleton animation */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden bg-muted;
+  }
+
+  .skeleton-shimmer::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.4), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}
+
+@layer utilities {
+  /* Custom utilities */
+  .shadow-soft {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-lg);
+  }
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="hangerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A855F7"/>
+      <stop offset="100%" style="stop-color:#14B8A6"/>
+    </linearGradient>
+  </defs>
+  <!-- Hanger hook -->
+  <path d="M16 4 C14 4 12 5 12 7 C12 8.5 13 9.5 14.5 10" 
+        stroke="url(#hangerGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Hanger body -->
+  <path d="M16 10 L6 20 L6 22 L26 22 L26 20 L16 10" 
+        stroke="url(#hangerGrad)" stroke-width="2.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+  <!-- Sparkle -->
+  <g fill="#14B8A6">
+    <circle cx="24" cy="6" r="1"/>
+    <path d="M24 2 L24 4 M24 8 L24 10 M20 6 L22 6 M26 6 L28 6" 
+          stroke="#14B8A6" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

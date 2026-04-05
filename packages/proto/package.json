@@ -1,0 +1,9 @@
+{
+  "name": "@newstok/proto",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node -e \"console.log('Proto package stores source definitions only.')\"",
+    "lint": "node -e \"console.log('Proto definitions are validated at runtime by grpc loader.')\""
+  }
+}

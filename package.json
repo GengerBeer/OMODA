@@ -1,0 +1,15 @@
+{
+  "name": "newstok",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "dev:backend": "pnpm -r --parallel --filter @newstok/api-gateway --filter @newstok/content-service --filter @newstok/profile-service --filter @newstok/feed-service --filter @newstok/ai-summary-service dev",
+    "dev:expo-preview": "pnpm --filter @newstok/expo-preview start",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "seed": "pnpm --filter @newstok/content-service seed"
+  }
+}
