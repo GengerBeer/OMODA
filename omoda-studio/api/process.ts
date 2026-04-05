@@ -1,3 +1,5 @@
+import { waitUntil } from '@vercel/functions';
+
 const ANGLE_MODE_MARKER = '[ANGLE_MODE]';
 const GENERATION_OPTIONS_MARKER = '[OMODA_OPTIONS]';
 const DEFAULT_BACKGROUND_PROMPT = 'Premium OMODA showroom interior with cinematic architectural lighting, polished floor reflections, refined luxury atmosphere, and a realistic editorial fashion backdrop.';
@@ -449,11 +451,12 @@ export default async function handler(req: ApiRequestLike, res: ApiResponseLike)
     return res.status(400).json({ error: 'Missing image_id' });
   }
 
-  res.status(202).json({ status: 'processing', image_id: imageId });
-
-  processImage(imageId).catch(async (error: unknown) => {
+  const processingTask = processImage(imageId).catch(async (error: unknown) => {
     const message = error instanceof Error ? error.message : 'Unknown processing error';
     console.error(`Processing failed for ${imageId}:`, message);
     await markImageError(imageId, message);
   });
+
+  waitUntil(processingTask);
+  return res.status(202).json({ status: 'processing', image_id: imageId });
 }
