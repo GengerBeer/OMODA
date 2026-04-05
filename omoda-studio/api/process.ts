@@ -2,7 +2,7 @@ import { waitUntil } from '@vercel/functions';
 
 const ANGLE_MODE_MARKER = '[ANGLE_MODE]';
 const GENERATION_OPTIONS_MARKER = '[OMODA_OPTIONS]';
-const DEFAULT_BACKGROUND_PROMPT = 'Premium OMODA showroom interior with cinematic architectural lighting, polished floor reflections, refined luxury atmosphere, and a realistic editorial fashion backdrop.';
+const DEFAULT_BACKGROUND_PROMPT = 'Clean minimalist professional photo studio backdrop, soft light gray seamless cyclorama with a smooth wall-to-floor transition, uniform tone with no texture or gradients, high-key diffused lighting, a very subtle soft shadow beneath the subject, neutral contemporary aesthetic, distraction-free, premium catalog photography.';
 
 type NullableString = string | null | undefined;
 
