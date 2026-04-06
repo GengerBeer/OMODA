@@ -300,6 +300,12 @@ Operational note:
 - the implementation encodes images to base64 and sends them inline to the Gemini API endpoint;
 - therefore, the transmitted data may include personal imagery whenever users upload identifiable persons.
 
+Additional architectural note:
+
+- the current codebase uses Google Gemini as the active generation integration;
+- however, this document does not exclude the present or future use of additional generation or media-processing providers, including **ByteDance**, **Kling**, and **proprietary internal pipelines**;
+- if any such provider is activated in production, staging, fallback, or experimental workflows in a way that materially changes recipients, transfer patterns, or processing logic, this document and the public privacy disclosures should be updated accordingly.
+
 ### 6.3 Data Potentially Processed By Vercel
 
 Vercel hosts:
