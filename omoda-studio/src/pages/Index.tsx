@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { createStudioPortraitBlob, downloadBlob, fetchAssetBlob } from '@/lib/studioPack';
+import { createGarmentReferenceSheetFile, createStudioPortraitBlob, downloadBlob } from '@/lib/studioPack';
 import { supabase } from '@/lib/supabase';
 import {
   Camera,
@@ -81,6 +81,13 @@ interface HistoryItem {
   resultUrl: string;
 }
 
+interface GarmentReferenceItem {
+  id: string;
+  file: File;
+  previewUrl: string;
+  name: string;
+}
+
 function buildWebhookUrl() {
   const configuredBase = import.meta.env.VITE_BACKEND_URL || '/api/process';
   return configuredBase.endsWith('/webhook/process')
@@ -147,8 +154,7 @@ export default function Index() {
   const refetchProfile = () => {};
 
   const [mode, setMode] = useState<GenerationMode>('preset');
-  const [garmentFile, setGarmentFile] = useState<File | null>(null);
-  const [garmentPreview, setGarmentPreview] = useState<string | null>(null);
+  const [garmentReferences, setGarmentReferences] = useState<GarmentReferenceItem[]>([]);
   const [selectedPreset, setSelectedPreset] = useState('');
   const [customModelPrompt, setCustomModelPrompt] = useState('');
   const [faceFile, setFaceFile] = useState<File | null>(null);
@@ -169,6 +175,7 @@ export default function Index() {
   const [angleResults, setAngleResults] = useState<AngleResult[]>([]);
   const [isGeneratingAngles, setIsGeneratingAngles] = useState(false);
   const [anglePollingIds, setAnglePollingIds] = useState<Record<string, string>>({});
+  const [portraitCropBlob, setPortraitCropBlob] = useState<Blob | null>(null);
   const [portraitCropUrl, setPortraitCropUrl] = useState<string | null>(null);
   const [isPreparingPortraitCrop, setIsPreparingPortraitCrop] = useState(false);
 
@@ -178,37 +185,72 @@ export default function Index() {
   const resultRef = useRef<HTMLDivElement>(null);
   const anglesRef = useRef<HTMLDivElement>(null);
   const generatedPortraitRef = useRef<string | null>(null);
+  const garmentReferencesRef = useRef<GarmentReferenceItem[]>([]);
 
-  const canGeneratePreset = !!garmentFile && (!!selectedPreset || !!customModelPrompt.trim());
-  const canGenerateSelfie = !!garmentFile && !!faceFile && !!bodyFile;
+  const canGeneratePreset = garmentReferences.length > 0 && (!!selectedPreset || !!customModelPrompt.trim());
+  const canGenerateSelfie = garmentReferences.length > 0 && !!faceFile && !!bodyFile;
   const canGenerate = mode === 'preset' ? canGeneratePreset : canGenerateSelfie;
   const completedAngleCount = angleResults.filter((item) => !!item.url).length;
+  const hasPendingAngles = Object.keys(anglePollingIds).length > 0;
 
   const generationSummary = useMemo(() => {
     if (mode === 'preset') {
       return {
         title: 'Preset and custom model mode',
-        description: 'Use Supabase model presets, describe your own model, and control the background with text or a reference image.',
+        description: 'Upload up to three outfit references, describe your own model, and control the background with text or a reference image.',
       };
     }
 
     return {
       title: 'On-yourself mode',
-      description: 'Upload your face and full-body photos, then describe the background or attach a background reference image.',
+      description: 'Upload up to three outfit references plus your face and full-body photos, then describe the background or attach a background reference image.',
     };
   }, [mode]);
 
-  const handleGarmentUpload = useCallback((file: File, previewUrl: string) => {
-    revokePreview(garmentPreview);
-    setGarmentFile(file);
-    setGarmentPreview(previewUrl);
-  }, [garmentPreview]);
+  const handleGarmentUpload = useCallback((files: File[]) => {
+    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+    if (imageFiles.length === 0) {
+      toast.error('Please paste or choose image files.');
+      return;
+    }
 
-  const handleGarmentClear = useCallback(() => {
-    revokePreview(garmentPreview);
-    setGarmentFile(null);
-    setGarmentPreview(null);
-  }, [garmentPreview]);
+    const availableSlots = Math.max(0, 3 - garmentReferences.length);
+    if (availableSlots === 0) {
+      toast.error('You can upload up to 3 outfit references.');
+      return;
+    }
+
+    const acceptedFiles = imageFiles.slice(0, availableSlots);
+    if (imageFiles.length > acceptedFiles.length) {
+      toast.error('Only the first 3 outfit references are kept.');
+    }
+
+    setGarmentReferences((previous) => [
+      ...previous,
+      ...acceptedFiles.map((file, index) => ({
+        id: `${file.name}-${file.size}-${file.lastModified}-${Date.now()}-${index}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        name: file.name,
+      })),
+    ]);
+  }, [garmentReferences.length]);
+
+  const handleGarmentClear = useCallback((id?: string) => {
+    setGarmentReferences((previous) => {
+      if (!id) {
+        previous.forEach((item) => revokePreview(item.previewUrl));
+        return [];
+      }
+
+      const target = previous.find((item) => item.id === id);
+      if (target) {
+        revokePreview(target.previewUrl);
+      }
+
+      return previous.filter((item) => item.id !== id);
+    });
+  }, []);
 
   const handlePreviewFile = useCallback((
     file: File | null | undefined,
@@ -226,7 +268,9 @@ export default function Index() {
     setPreview(URL.createObjectURL(file));
   }, []);
 
-  const replacePortraitAsset = useCallback((nextUrl: string | null) => {
+  const replacePortraitAsset = useCallback((nextBlob: Blob | null) => {
+    setPortraitCropBlob(nextBlob);
+    const nextUrl = nextBlob ? URL.createObjectURL(nextBlob) : null;
     revokePreview(generatedPortraitRef.current);
     generatedPortraitRef.current = nextUrl;
     setPortraitCropUrl(nextUrl);
@@ -295,6 +339,10 @@ export default function Index() {
   }, [user]);
 
   useEffect(() => {
+    garmentReferencesRef.current = garmentReferences;
+  }, [garmentReferences]);
+
+  useEffect(() => {
     void loadHistory();
   }, [loadHistory]);
 
@@ -353,7 +401,7 @@ export default function Index() {
         }
 
         void loadHistory();
-        toast.success('Base render ready. OMODA STUDIO is now assembling the image studio pack.');
+        toast.success('Base render ready. OMODA STUDIO is preparing the catalog crop.');
 
         setTimeout(() => {
           resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -443,14 +491,6 @@ export default function Index() {
   }, [anglePollingIds]);
 
   useEffect(() => {
-    if (!resultUrl || angleResults.length > 0 || isGeneratingAngles || Object.keys(anglePollingIds).length > 0) {
-      return;
-    }
-
-    void queueAngleGeneration(resultUrl, true);
-  }, [anglePollingIds, angleResults.length, isGeneratingAngles, queueAngleGeneration, resultUrl]);
-
-  useEffect(() => {
     let isActive = true;
 
     if (!resultUrl) {
@@ -467,7 +507,7 @@ export default function Index() {
           return;
         }
 
-        replacePortraitAsset(URL.createObjectURL(blob));
+        replacePortraitAsset(blob);
       })
       .catch((error) => {
         console.error('Failed to prepare portrait crop:', error);
@@ -486,16 +526,19 @@ export default function Index() {
 
 
   useEffect(() => () => {
-    revokePreview(garmentPreview);
+    garmentReferencesRef.current.forEach((item) => revokePreview(item.previewUrl));
+  }, []);
+
+  useEffect(() => () => {
     revokePreview(facePreview);
     revokePreview(bodyPreview);
     revokePreview(backgroundPreview);
     revokePreview(generatedPortraitRef.current);
-  }, [backgroundPreview, bodyPreview, facePreview, garmentPreview]);
+  }, [backgroundPreview, bodyPreview, facePreview]);
 
   const handleGenerate = async () => {
-    if (!garmentFile) {
-      toast.error('Upload a garment photo first.');
+    if (garmentReferences.length === 0) {
+      toast.error('Upload at least one outfit reference first.');
       return;
     }
 
@@ -519,7 +562,8 @@ export default function Index() {
     setCurrentGenerationMode(mode);
 
     try {
-      const garmentUpload = await uploadIncomingFile(garmentFile, 'garment');
+      const garmentReferenceFile = await createGarmentReferenceSheetFile(garmentReferences.map((item) => item.file));
+      const garmentUpload = await uploadIncomingFile(garmentReferenceFile, 'garment');
       const backgroundUpload = backgroundFile ? await uploadIncomingFile(backgroundFile, 'background') : null;
       let presetImageUrl: string | null = null;
       let selfieFaceUrl: string | null = null;
@@ -750,8 +794,8 @@ export default function Index() {
                 Merge preset styling and personal try-on into one premium studio workflow.
               </h1>
               <p className="max-w-2xl text-lg text-muted-foreground">
-                Upload a garment once, choose a preset model or your own photos, then generate a full studio pack
-                with hero crop and angle views from the same result.
+                Upload up to three outfit references, choose a preset model or your own photos, then generate the
+                base studio image and catalog crop first, with angle views available on demand.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -782,7 +826,7 @@ export default function Index() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                   1
                 </span>
-                <p>Upload a clean garment image once. The same source feeds all generation modes.</p>
+                <p>Upload up to three outfit references or paste them with Ctrl+V. The app combines them into one garment brief for every mode.</p>
               </div>
               <div className="flex items-start gap-3">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
@@ -794,7 +838,7 @@ export default function Index() {
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                   3
                 </span>
-                <p>One generation now expands into a studio pack with cropped catalog assets and the full angle set.</p>
+                <p>One generation produces the base render and catalog crop first. Angle views can be triggered separately when needed.</p>
               </div>
             </CardContent>
           </Card>
@@ -802,11 +846,16 @@ export default function Index() {
 
         <div className="mt-10 space-y-10">
           <section className="space-y-4">
-            <SectionHeading number="1" title="Upload Garment" subtitle="Use a clean garment shot on a light background for the best transfer." />
+            <SectionHeading number="1" title="Upload Garment" subtitle="Add up to three outfit references. You can also paste images directly with Ctrl+V." />
             <GarmentUpload
               onUpload={handleGarmentUpload}
-              previewUrl={garmentPreview}
+              items={garmentReferences.map((item) => ({
+                id: item.id,
+                previewUrl: item.previewUrl,
+                name: item.name,
+              }))}
               onClear={handleGarmentClear}
+              maxFiles={3}
             />
           </section>
 
@@ -993,8 +1042,8 @@ export default function Index() {
 
               <p className="text-sm text-muted-foreground">
                 {mode === 'preset'
-                  ? 'One click produces the base look, cropped hero, and the angle views.'
-                  : 'Selfie mode still needs both reference photos, then the studio pack is assembled automatically.'}
+                  ? 'One click produces the base look and catalog crop. Angle views can be generated separately afterwards.'
+                  : 'Selfie mode still needs both personal photos, then the base look and crop are assembled automatically.'}
               </p>
             </div>
           </section>
@@ -1054,7 +1103,7 @@ export default function Index() {
                     <CardHeader>
                       <CardTitle className="text-xl">Studio Pack Status</CardTitle>
                       <CardDescription>
-                        One click now assembles the base look, cropped hero, and the full image angle set.
+                        The base look and catalog crop are prepared automatically. Angle views are generated only when you request them.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -1069,7 +1118,9 @@ export default function Index() {
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <span>Angle views</span>
-                          <Badge variant={completedAngleCount === ANGLE_VARIANTS.length ? 'secondary' : 'outline'}>{completedAngleCount}/{ANGLE_VARIANTS.length}</Badge>
+                          <Badge variant={completedAngleCount === ANGLE_VARIANTS.length ? 'secondary' : 'outline'}>
+                            {angleResults.length === 0 && !hasPendingAngles ? 'Not started' : `${completedAngleCount}/${ANGLE_VARIANTS.length}`}
+                          </Badge>
                         </div>
                       </div>
 
@@ -1089,7 +1140,7 @@ export default function Index() {
                         <Button
                           variant="outline"
                           className="h-12 rounded-full"
-                          disabled={isGeneratingAngles || angleResults.length > 0}
+                          disabled={isGeneratingAngles || hasPendingAngles || angleResults.length > 0}
                           onClick={handleGenerateAngles}
                         >
                           {isGeneratingAngles ? (
@@ -1100,7 +1151,7 @@ export default function Index() {
                           ) : (
                             <>
                               <Camera className="mr-2 h-4 w-4" />
-                              {angleResults.length > 0 ? 'Angles Auto-Building' : 'Generate Angles Now'}
+                              {hasPendingAngles ? 'Angles In Progress' : angleResults.length > 0 ? 'Angles Ready' : 'Generate Angles Now'}
                             </>
                           )}
                         </Button>
@@ -1112,13 +1163,13 @@ export default function Index() {
                           className="h-12 rounded-full"
                           disabled={!portraitCropUrl}
                           onClick={async () => {
-                            if (!portraitCropUrl) {
+                            if (!portraitCropUrl || !portraitCropBlob) {
                               return;
                             }
 
                             try {
-                              downloadBlob(await fetchAssetBlob(portraitCropUrl), `omoda-studio-hero-crop-${Date.now()}.jpg`);
-                              toast.success('Hero crop downloaded.');
+                              downloadBlob(portraitCropBlob, `omoda-studio-catalog-crop-${Date.now()}.jpg`);
+                              toast.success('Catalog crop downloaded.');
                             } catch {
                               toast.error('Download failed.');
                             }
@@ -1141,7 +1192,7 @@ export default function Index() {
 
           {resultUrl && (
             <section className="space-y-6 border-t border-border/80 pt-8">
-              <SectionHeading number="5" title="Studio Pack" subtitle="The app now builds the same final image asset family automatically: full body render, cropped hero, and the full angle set." />
+              <SectionHeading number="5" title="Studio Pack" subtitle="The app now builds the core final image family automatically: full body render and catalog crop, with optional angle views afterwards." />
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card className="overflow-hidden border-border/70">
@@ -1176,7 +1227,7 @@ export default function Index() {
 
           {angleResults.length > 0 && (
             <section ref={anglesRef} className="space-y-6 border-t border-border/80 pt-8">
-              <SectionHeading number="6" title="Angle Views" subtitle="Each card updates independently while the studio pack finishes the generated variants." />
+              <SectionHeading number="6" title="Angle Views" subtitle="These variants are generated only after you press the angle button, then each card updates independently." />
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {angleResults.map((item) => (
@@ -1371,6 +1422,3 @@ function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: 
     </Card>
   );
 }
-
-
-

@@ -1,4 +1,4 @@
-﻿function wait(ms: number) {
+function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
@@ -16,8 +16,11 @@ export function downloadBlob(blob: Blob, filename: string) {
   const anchor = document.createElement('a');
   anchor.href = objectUrl;
   anchor.download = filename;
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(objectUrl);
+  document.body.removeChild(anchor);
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
 }
 
 async function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality?: number) {
@@ -50,6 +53,87 @@ function drawBitmapCover(
   context.globalAlpha = alpha;
   context.drawImage(bitmap, offsetX, offsetY, renderWidth, renderHeight);
   context.restore();
+}
+
+function drawBitmapContain(
+  context: CanvasRenderingContext2D,
+  bitmap: ImageBitmap,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.min(width / bitmap.width, height / bitmap.height);
+  const renderWidth = bitmap.width * scale;
+  const renderHeight = bitmap.height * scale;
+  const offsetX = x + (width - renderWidth) / 2;
+  const offsetY = y + (height - renderHeight) / 2;
+
+  context.fillStyle = '#ffffff';
+  context.fillRect(x, y, width, height);
+  context.drawImage(bitmap, offsetX, offsetY, renderWidth, renderHeight);
+}
+
+export async function createGarmentReferenceSheetFile(files: File[]) {
+  const imageFiles = files.filter((file) => file.type.startsWith('image/')).slice(0, 3);
+  if (imageFiles.length === 0) {
+    throw new Error('No garment references were provided.');
+  }
+
+  if (imageFiles.length === 1) {
+    return imageFiles[0];
+  }
+
+  const bitmaps = await Promise.all(imageFiles.map((file) => createImageBitmap(file)));
+
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1800;
+    canvas.height = 1800;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Canvas is unavailable in this browser.');
+    }
+
+    context.fillStyle = '#f4f4f2';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    const padding = 56;
+    const gap = 40;
+    const topCellWidth = Math.round((canvas.width - padding * 2 - gap) / 2);
+    const topCellHeight = 760;
+
+    const slots = bitmaps.length === 2
+      ? [
+        { x: padding, y: padding, width: topCellWidth, height: canvas.height - padding * 2 },
+        { x: padding + topCellWidth + gap, y: padding, width: topCellWidth, height: canvas.height - padding * 2 },
+      ]
+      : [
+        { x: padding, y: padding, width: topCellWidth, height: topCellHeight },
+        { x: padding + topCellWidth + gap, y: padding, width: topCellWidth, height: topCellHeight },
+        {
+          x: padding,
+          y: padding + topCellHeight + gap,
+          width: canvas.width - padding * 2,
+          height: canvas.height - padding * 2 - topCellHeight - gap,
+        },
+      ];
+
+    bitmaps.forEach((bitmap, index) => {
+      const slot = slots[index];
+      if (!slot) {
+        return;
+      }
+
+      drawBitmapContain(context, bitmap, slot.x, slot.y, slot.width, slot.height);
+    });
+
+    const blob = await canvasToBlob(canvas, 'image/jpeg', 0.94);
+    return new File([blob], `garment-reference-sheet-${Date.now()}.jpg`, { type: 'image/jpeg' });
+  } finally {
+    bitmaps.forEach((bitmap) => bitmap.close());
+  }
 }
 
 export async function createStudioPortraitBlob(imageUrl: string) {

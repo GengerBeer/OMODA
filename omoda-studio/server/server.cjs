@@ -195,19 +195,22 @@ Task:
 Create a photorealistic full-body fashion image following these instructions.
 
 Requirements:
-- Image 1: Clothing item to be worn
+- Image 1: Outfit reference image. It may be a single garment photo, a multi-image reference sheet with up to three outfit references, or a photo of a person already wearing the desired clothing.
 - Image 2: Reference model${options.backgroundImageUrl ? '\n- Image 3: Background reference image' : ''}
-- Dress the model from Image 2 in the clothing from Image 1
-- Accurately replicate the clothing's design, fit, length, folds, seams, texture, and material
-- Ensure the clothing looks naturally worn and well-fitted, not pasted or floating
-- Maintain the exact pose, facial features, expression, skin tone, and hair from Image 2
-- Show the model in full height (head to toe), with no cropping
-- Use a professional fashion model pose that clearly presents the clothing
+- Use Image 1 only as the clothing reference. If it contains a person, do not copy that person's identity, pose, body, or background.
+- If Image 1 contains multiple garments or layered outfit references, combine them into one coherent final styled look.
+- Dress the model from Image 2 in the clothing from Image 1.
+- Accurately replicate the clothing's design, fit, length, folds, seams, texture, and material.
+- Extract the desired clothing faithfully even when it is photographed on a hanger, flat lay, mannequin, or another person.
+- Ensure the clothing looks naturally worn and well-fitted, not pasted or floating.
+- Maintain the exact pose, facial features, expression, skin tone, and hair from Image 2.
+- Show the model in full height (head to toe), with no cropping.
+- Use a professional fashion model pose that clearly presents the clothing.
 - Background scene: ${backgroundPrompt}
-${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 3 while keeping the model and garment clearly visible' : '- Build the requested environment naturally around the model while keeping the garment easy to evaluate'}
-- Maintain realistic skin texture, natural colors, and sharp focus
-- Image resolution must be exactly 864 x 1232 pixels (portrait orientation)
-- Keep the result suitable for a professional fashion catalog or campaign image`;
+${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 3 while keeping the model and garment clearly visible.' : '- Build the requested environment naturally around the model while keeping the garment easy to evaluate.'}
+- Maintain realistic skin texture, natural colors, and sharp focus.
+- Image resolution must be exactly 864 x 1232 pixels (portrait orientation).
+- Keep the result suitable for a professional fashion catalog or campaign image.`;
 
   if (options.modelPrompt) {
     prompt += `\n\nADDITIONAL USER REQUIREMENTS:\n${options.modelPrompt}`;
@@ -222,21 +225,25 @@ function buildCustomPrompt(options) {
   let prompt = `You are an advanced fashion image-generation AI.
 
 Task:
-Using the clothing from Image 1 as the only garment reference, generate a photorealistic full-body fashion image.${options.backgroundImageUrl ? '\nImage 2 is a background reference image.' : ''}
+Using Image 1 as the outfit reference, generate a photorealistic full-body fashion image.${options.backgroundImageUrl ? '\nImage 2 is a background reference image.' : ''}
 
 Requirements:
-- Generate a realistic human model with natural body proportions
-- Dress the model exactly in the clothing from Image 1
-- Accurately replicate the clothing's design, fit, length, folds, seams, texture, and material
-- Ensure the clothing looks naturally worn and well-fitted, not pasted or floating
-- Show the model in full height (head to toe), with no cropping
-- Use a professional fashion model pose that clearly presents and advertises the clothing
+- Image 1 may be a single garment photo, a multi-image reference sheet with up to three outfit references, or a photo of a person already wearing the target outfit.
+- Use Image 1 only as the clothing reference. If it contains a person, do not copy that person's face, body, pose, or environment.
+- If Image 1 contains multiple garments or outfit references, combine them into one coherent layered final look.
+- Generate a realistic human model with natural body proportions.
+- Dress the model exactly in the clothing from Image 1.
+- Accurately replicate the clothing's design, fit, length, folds, seams, texture, and material.
+- Extract the desired outfit details faithfully even when the clothes are shown on a mannequin, hanger, flat lay, or another person.
+- Ensure the clothing looks naturally worn and well-fitted, not pasted or floating.
+- Show the model in full height (head to toe), with no cropping.
+- Use a professional fashion model pose that clearly presents and advertises the clothing.
 - Background scene: ${backgroundPrompt}
-${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 2 while keeping the model and clothing in clear focus' : '- Build the requested environment naturally around the model'}
-- Maintain realistic skin texture, natural colors, and sharp focus
-- Image resolution must be exactly 864 x 1232 pixels (portrait orientation)
-- Keep the result suitable for a professional fashion catalog or e-commerce listing
-- Avoid CGI, plastic skin, stylization, or artistic effects`;
+${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 2 while keeping the model and clothing in clear focus.' : '- Build the requested environment naturally around the model.'}
+- Maintain realistic skin texture, natural colors, and sharp focus.
+- Image resolution must be exactly 864 x 1232 pixels (portrait orientation).
+- Keep the result suitable for a professional fashion catalog or e-commerce listing.
+- Avoid CGI, plastic skin, stylization, or artistic effects.`;
 
   if (options.modelPrompt) {
     prompt += `\n\nADDITIONAL USER REQUIREMENTS:\n${options.modelPrompt}`;
@@ -251,40 +258,43 @@ function buildSelfiePrompt(options) {
   const totalImages = options.backgroundImageUrl ? 'FOUR' : 'THREE';
   const backgroundImageLine = options.backgroundImageUrl ? '\n- Image 4: Background reference image' : '';
   const backgroundInstruction = options.backgroundImageUrl
-    ? '- Match the environment, perspective, depth, and lighting direction from Image 4 while keeping the person fully visible and realistic'
-    : '- Build the requested environment naturally around the person while keeping the clothing clearly visible';
+    ? '- Match the environment, perspective, depth, and lighting direction from Image 4 while keeping the person fully visible and realistic.'
+    : '- Build the requested environment naturally around the person while keeping the outfit clearly visible.';
 
   return `You are an advanced AI fashion virtual try-on system.
 
 You receive ${totalImages} images:
-- Image 1: A clothing item (the garment to be worn)
-- Image 2: A close-up face photo of a real person
+- Image 1: Outfit reference image. It may be a single garment photo, a multi-image reference sheet with up to three outfit references, or a person already wearing the target outfit.
+- Image 2: A close-up face photo of a real person.
 - Image 3: A full-body photo of the same real person${backgroundImageLine}
 
 Your task:
-Generate a single photorealistic full-body image of this exact real person wearing the clothing from Image 1.
+Generate a single photorealistic full-body image of this exact real person wearing the outfit from Image 1.
 
 Person requirements:
-- Preserve the exact face from Image 2: facial features, skin tone, ethnicity, hair color, hair style, facial structure, eyes, nose, lips
-- Use the body from Image 3 as reference for body shape, proportions, height, and build
-- The result must look like the same real individual, not a generic model
-- Do not beautify or idealize the person
+- Preserve the exact face from Image 2: facial features, skin tone, ethnicity, hair color, hair style, facial structure, eyes, nose, lips.
+- Use the body from Image 3 as reference for body shape, proportions, height, and build.
+- The result must look like the same real individual, not a generic model.
+- Do not beautify or idealize the person.
 
 Clothing requirements:
-- Dress the person in the exact garment from Image 1
-- Replicate every detail: design, color, pattern, texture, material, fit, cut, length, seams, buttons, zippers, prints
-- The clothing must look naturally worn and fitted to this person's actual body
+- Use Image 1 only as the clothing reference. If it contains another person, do not copy that person's identity, pose, or body.
+- If Image 1 contains multiple garment or outfit references, combine them into one coherent final look on the target person.
+- Dress the person in the exact outfit from Image 1.
+- Replicate every detail: design, color, pattern, texture, material, fit, cut, length, seams, buttons, zippers, prints.
+- The clothing must look naturally worn and fitted to this person's actual body.
+- Faithfully extract the outfit even when the reference is photographed on another person, hanger, mannequin, or flat lay.
 
 Image requirements:
-- Full body visible from head to toe with no cropping
-- Natural standing pose
+- Full body visible from head to toe with no cropping.
+- Natural standing pose.
 - Background scene: ${backgroundPrompt}
 ${backgroundInstruction}
-- Photorealistic sharp focus with natural colors
-- Portrait orientation 864 x 1232 pixels
-- No CGI look, no stylization
+- Photorealistic sharp focus with natural colors.
+- Portrait orientation 864 x 1232 pixels.
+- No CGI look, no stylization.
 
-Output: One single ultra-realistic image of the real person wearing the garment in the requested background.`;
+Output: One single ultra-realistic image of the real person wearing the outfit in the requested background.`;
 }
 
 async function getClothingRecord(imageId) {
