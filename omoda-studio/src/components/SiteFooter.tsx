@@ -13,9 +13,6 @@ export function SiteFooter() {
           <Link to="/privacy-policy" className="transition-colors hover:text-foreground">
             Privacy Policy
           </Link>
-          <Link to="/gdpr-policy" className="transition-colors hover:text-foreground">
-            GDPR Policy
-          </Link>
         </div>
       </div>
     </footer>

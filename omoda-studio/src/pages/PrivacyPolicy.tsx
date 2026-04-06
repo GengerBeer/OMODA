@@ -2,8 +2,6 @@ import { LegalPageLayout } from '@/components/LegalPageLayout';
 import {
   LEGAL_BRAND_NAME,
   LEGAL_COMPANY_NAME,
-  LEGAL_CONTACT_ADDRESS,
-  LEGAL_CONTACT_EMAIL,
   LEGAL_LAST_UPDATED,
   LEGAL_SUBPROCESSORS,
 } from '@/lib/legal';
@@ -19,13 +17,8 @@ export default function PrivacyPolicy() {
         <h2>1. Controller Information</h2>
         <p>
           {LEGAL_COMPANY_NAME} is the controller responsible for the processing described in this Policy.
-          Unless a separate agreement says otherwise, you can contact us about privacy matters at
-          {' '}
-          <strong>{LEGAL_CONTACT_EMAIL}</strong>
-          {' '}
-          or at
-          {' '}
-          <strong>{LEGAL_CONTACT_ADDRESS}</strong>.
+          Privacy-related requests may be submitted through the official contact channels made available by the company
+          on the Site or in applicable commercial documentation.
         </p>
         <p>
           Last updated:
@@ -119,9 +112,8 @@ export default function PrivacyPolicy() {
         <h2>9. Your Privacy Rights</h2>
         <p>
           Subject to applicable law, you may have the right to request access, correction, deletion, restriction,
-          portability, objection, or withdrawal of consent. If you want to exercise any of these rights, contact us at
-          {' '}
-          <strong>{LEGAL_CONTACT_EMAIL}</strong>.
+          portability, objection, or withdrawal of consent. If you want to exercise any of these rights, you may do so
+          through the official company contact channels made available on the Site.
         </p>
       </section>
 

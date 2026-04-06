@@ -8,10 +8,6 @@
     {
       "source": "/privacy-policy",
       "destination": "/"
-    },
-    {
-      "source": "/gdpr-policy",
-      "destination": "/"
     }
   ]
 }
