@@ -37,6 +37,7 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
+  const inputId = 'garment-upload-input';
 
   const handleFiles = useCallback((files: File[]) => {
     const imageFiles = extractImageFiles(files);
@@ -98,17 +99,22 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
 
   const remainingSlots = Math.max(0, maxFiles - items.length);
   const hasItems = items.length > 0;
+  const galleryGridClass = items.length === 1
+    ? 'grid-cols-1'
+    : items.length === 2
+      ? 'grid-cols-1 sm:grid-cols-2'
+      : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3';
 
   return (
     <div className="space-y-4">
-      <div className={cn('grid gap-4', hasItems ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : 'grid-cols-1')}>
+      <div className={cn('grid gap-4 xl:items-stretch', hasItems ? 'xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.38fr)]' : 'grid-cols-1')}>
         <div className={cn(
-          hasItems ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'hidden',
+          hasItems ? `grid gap-3 ${galleryGridClass}` : 'hidden',
         )}>
           {items.map((item, index) => (
             <div
               key={item.id}
-              className="group relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-soft transition-transform duration-300 hover:-translate-y-1"
+              className="group relative h-full overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-soft transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="aspect-[4/5] bg-muted">
                 <img
@@ -140,24 +146,26 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
         </div>
 
         {remainingSlots > 0 ? (
-          <div
+          <label
+            htmlFor={inputId}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             className={cn(
               'upload-zone flex flex-col justify-between rounded-[1.9rem] border border-dashed border-border/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,241,235,0.92))] p-6',
-              hasItems ? 'min-h-[22rem] xl:sticky xl:top-24' : 'min-h-[20rem]',
+              hasItems ? 'min-h-[22rem] h-full xl:min-h-full' : 'min-h-[20rem]',
               isDragging && 'active',
             )}
           >
             <input
+              id={inputId}
               type="file"
               accept="image/*"
               multiple
               onChange={handleInputChange}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
             />
-            <div className="space-y-5">
+            <div className="pointer-events-none space-y-5">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-soft">
                 <ImagePlus className="h-6 w-6" />
               </div>
@@ -175,7 +183,7 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
                 <span className="rounded-full border border-border/80 bg-background/70 px-3 py-1.5">Worn on person</span>
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="pointer-events-none space-y-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" className="pointer-events-none rounded-full bg-background/85 px-4">
                   <Upload className="mr-2 h-4 w-4" />
@@ -199,7 +207,7 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
                 </div>
               )}
             </div>
-          </div>
+          </label>
         ) : (
           <div className="rounded-[1.9rem] border border-dashed border-border/80 bg-card/70 p-6 text-center">
             <p className="text-sm font-medium tracking-[0.12em] uppercase text-foreground/80">Look complete</p>
