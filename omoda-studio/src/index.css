@@ -122,6 +122,9 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "kern" 1, "liga" 1;
+    background-image:
+      radial-gradient(circle at top, hsl(30 22% 93% / 0.55), transparent 38%),
+      linear-gradient(180deg, hsl(0 0% 100%), hsl(40 22% 98%));
   }
 
   /* Typography scale */
@@ -141,22 +144,35 @@
 @layer components {
   /* Upload zone styling */
   .upload-zone {
-    @apply relative border-2 border-dashed border-border rounded-xl p-8 transition-all duration-200;
-    @apply hover:border-foreground/30 hover:bg-accent/50;
+    @apply relative overflow-hidden border border-border rounded-xl p-8 transition-all duration-300;
+    @apply hover:border-foreground/20 hover:shadow-lg;
   }
 
   .upload-zone.active {
-    @apply border-primary bg-accent;
+    @apply border-primary shadow-lg;
+  }
+
+  .upload-zone::before {
+    content: '';
+    @apply absolute inset-0 opacity-90;
+    background:
+      linear-gradient(180deg, hsl(0 0% 100% / 0.92), hsl(36 28% 94% / 0.88));
+    z-index: 0;
+  }
+
+  .upload-zone > * {
+    position: relative;
+    z-index: 1;
   }
 
   /* Preset card styling */
   .preset-card {
-    @apply relative overflow-hidden rounded-lg border border-border bg-card transition-all duration-200 cursor-pointer;
-    @apply hover:shadow-md hover:border-foreground/20;
+    @apply relative overflow-hidden rounded-lg border border-border/80 bg-card transition-all duration-300 cursor-pointer;
+    @apply hover:-translate-y-1 hover:shadow-lg hover:border-foreground/20;
   }
 
   .preset-card.selected {
-    @apply ring-2 ring-primary ring-offset-2;
+    @apply ring-2 ring-primary ring-offset-2 shadow-lg;
   }
 
   /* Status stepper */

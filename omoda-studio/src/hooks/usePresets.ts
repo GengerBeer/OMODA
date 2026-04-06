@@ -50,7 +50,7 @@ export function usePresets() {
             style,
             thumbnail: preset.file_url,
           };
-        });
+        }).filter((preset) => preset.name.trim().toLowerCase() !== 'jake');
 
         setPresets(mappedPresets);
       }

@@ -97,102 +97,131 @@ export const GarmentUpload: React.FC<GarmentUploadProps> = ({
   }, [handleFiles]);
 
   const remainingSlots = Math.max(0, maxFiles - items.length);
+  const hasItems = items.length > 0;
 
   return (
     <div className="space-y-4">
-      {items.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className={cn('grid gap-4', hasItems ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : 'grid-cols-1')}>
+        <div className={cn(
+          hasItems ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'hidden',
+        )}>
           {items.map((item, index) => (
-            <div key={item.id} className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
-              <div className="aspect-square bg-muted">
+            <div
+              key={item.id}
+              className="group relative overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-soft transition-transform duration-300 hover:-translate-y-1"
+            >
+              <div className="aspect-[4/5] bg-muted">
                 <img
                   src={item.previewUrl}
                   alt={item.name}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => onClear(item.id)}
-                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background opacity-90 transition-opacity hover:opacity-100"
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-foreground/90 text-background opacity-90 transition hover:scale-105 hover:opacity-100"
               >
                 <X className="h-4 w-4" />
               </button>
-              <div className="space-y-1 p-3">
+              <div className="space-y-2 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="truncate text-sm font-medium">Reference {index + 1}</p>
-                  <span className="rounded-full bg-secondary px-2 py-1 text-[11px] text-secondary-foreground">
+                  <p className="truncate text-sm font-medium tracking-[0.08em] uppercase text-foreground/80">
+                    Reference {index + 1}
+                  </p>
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-secondary-foreground">
                     {index + 1}/{maxFiles}
                   </span>
                 </div>
-                <p className="truncate text-xs text-muted-foreground">{item.name}</p>
+                <p className="truncate text-sm text-muted-foreground">{item.name}</p>
               </div>
             </div>
           ))}
         </div>
-      )}
 
-      {remainingSlots > 0 ? (
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={cn('upload-zone space-y-4', isDragging && 'active')}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleInputChange}
-            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          />
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-              <ImagePlus className="h-6 w-6 text-muted-foreground" />
+        {remainingSlots > 0 ? (
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={cn(
+              'upload-zone flex flex-col justify-between rounded-[1.9rem] border border-dashed border-border/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(244,241,235,0.92))] p-6',
+              hasItems ? 'min-h-[22rem] xl:sticky xl:top-24' : 'min-h-[20rem]',
+              isDragging && 'active',
+            )}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleInputChange}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+            <div className="space-y-5">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-soft">
+                <ImagePlus className="h-6 w-6" />
+              </div>
+              <div className="space-y-3">
+                <p className="text-lg font-semibold">Drop, browse, or paste outfit references</p>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {hasItems
+                    ? `Add up to ${remainingSlots} more reference${remainingSlots > 1 ? 's' : ''}. The upload panel stays pinned so the flow feels calm and easy.`
+                    : 'Start with one strong garment photo, then add extra references for layers, styling, or a person already wearing the outfit.'}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                <span className="rounded-full border border-border/80 bg-background/70 px-3 py-1.5">Single garment</span>
+                <span className="rounded-full border border-border/80 bg-background/70 px-3 py-1.5">Layered look</span>
+                <span className="rounded-full border border-border/80 bg-background/70 px-3 py-1.5">Worn on person</span>
+              </div>
             </div>
-            <div className="space-y-2">
-              <p className="font-medium">Drop, browse, or paste outfit references</p>
-              <p className="text-sm text-muted-foreground">
-                Add up to {remainingSlots} more image{remainingSlots > 1 ? 's' : ''}. You can paste directly with Ctrl+V.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
-              <span className="rounded-full bg-secondary px-3 py-1">Single garment</span>
-              <span className="rounded-full bg-secondary px-3 py-1">Full look</span>
-              <span className="rounded-full bg-secondary px-3 py-1">Person wearing the outfit</span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Button variant="outline" size="sm" className="pointer-events-none">
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Images
-              </Button>
-              <span className="inline-flex items-center gap-2 rounded-full border border-border/80 px-3 py-1 text-xs text-muted-foreground">
-                <ClipboardPaste className="h-3.5 w-3.5" />
-                Ctrl+V paste enabled
-              </span>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" className="pointer-events-none rounded-full bg-background/85 px-4">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Images
+                </Button>
+                <span className="inline-flex items-center gap-2 rounded-full border border-border/80 bg-background/75 px-3 py-1.5 text-xs text-muted-foreground">
+                  <ClipboardPaste className="h-3.5 w-3.5" />
+                  Ctrl+V paste enabled
+                </span>
+              </div>
+
+              {hasItems && (
+                <div className="rounded-2xl bg-background/70 p-4 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-medium">Look builder</span>
+                    <span className="text-xs text-muted-foreground">{items.length}/{maxFiles}</span>
+                  </div>
+                  <p className="mt-2 text-muted-foreground">
+                    Keep adding pieces on the right, or replace any reference card from the gallery.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-border/80 bg-card/70 p-4 text-center">
-          <p className="text-sm font-medium">Three outfit references loaded</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Remove any image if you want to swap part of the look.
-          </p>
-          <Button variant="outline" size="sm" className="mt-4 rounded-full" onClick={() => onClear()}>
-            Clear All References
-          </Button>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-[1.9rem] border border-dashed border-border/80 bg-card/70 p-6 text-center">
+            <p className="text-sm font-medium tracking-[0.12em] uppercase text-foreground/80">Look complete</p>
+            <p className="mt-2 text-base font-medium">Three outfit references loaded</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Remove any image if you want to swap part of the look.
+            </p>
+            <Button variant="outline" size="sm" className="mt-5 rounded-full" onClick={() => onClear()}>
+              Clear All References
+            </Button>
+          </div>
+        )}
+      </div>
 
       {warning && (
-        <div className="flex items-center gap-2 text-sm text-warning">
-          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+        <div className="flex items-center gap-2 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-foreground">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0 text-warning" />
           <span>{warning}</span>
         </div>
       )}
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         Build a look from up to three references. The app can also use a photo of someone already wearing the target outfit.
       </p>
     </div>

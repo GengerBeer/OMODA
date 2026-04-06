@@ -45,13 +45,13 @@ export const ModelPresetGrid: React.FC<ModelPresetGridProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Mode Tabs */}
-      <div className="flex gap-2 p-1 bg-muted rounded-lg w-fit">
+      <div className="inline-flex gap-2 rounded-full border border-border/80 bg-secondary/70 p-1.5">
         <button
           onClick={() => handleModeChange('presets')}
           className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
             mode === 'presets'
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground'
@@ -63,7 +63,7 @@ export const ModelPresetGrid: React.FC<ModelPresetGridProps> = ({
         <button
           onClick={() => handleModeChange('custom')}
           className={cn(
-            'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            'flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors',
             mode === 'custom'
               ? 'bg-background text-foreground shadow-sm'
               : 'text-muted-foreground hover:text-foreground'
@@ -77,37 +77,39 @@ export const ModelPresetGrid: React.FC<ModelPresetGridProps> = ({
       {mode === 'presets' ? (
         <>
           {/* Filters */}
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Gender:</span>
-              <div className="flex gap-1">
+          <div className="rounded-[1.5rem] border border-border/80 bg-secondary/35 p-4">
+            <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">Gender</span>
+                <div className="flex flex-wrap gap-1.5">
                 {(['all', 'female', 'male'] as GenderFilter[]).map(gender => (
                   <Button
                     key={gender}
                     variant={genderFilter === gender ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setGenderFilter(gender)}
-                    className="capitalize"
+                    className="rounded-full capitalize"
                   >
                     {gender}
                   </Button>
                 ))}
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Style:</span>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">Style</span>
+                <div className="flex flex-wrap gap-1.5">
                 {(['all', 'casual', 'elegant', 'street'] as StyleFilter[]).map(style => (
                   <Button
                     key={style}
                     variant={styleFilter === style ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setStyleFilter(style)}
-                    className="capitalize"
+                    className="rounded-full capitalize"
                   >
                     {style}
                   </Button>
                 ))}
+                </div>
               </div>
             </div>
           </div>
@@ -128,7 +130,7 @@ export const ModelPresetGrid: React.FC<ModelPresetGridProps> = ({
 
           {/* Grid */}
           {!loading && !error && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filteredPresets.map(preset => (
                 <PresetCard
                   key={preset.id}
@@ -149,7 +151,7 @@ export const ModelPresetGrid: React.FC<ModelPresetGridProps> = ({
       ) : (
         /* Custom Mode */
         <div className="space-y-4">
-          <div className="bg-muted/50 rounded-lg p-4 border border-border">
+          <div className="rounded-[1.5rem] border border-border/80 bg-secondary/35 p-5">
             <label className="block text-sm font-medium mb-2">
               Describe your model
             </label>
@@ -177,7 +179,7 @@ export const ModelPresetGrid: React.FC<ModelPresetGridProps> = ({
                 <button
                   key={example}
                   onClick={() => onCustomPromptChange?.(example)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                  className="rounded-full border border-border/80 bg-secondary/45 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   {example}
                 </button>
@@ -200,18 +202,18 @@ const PresetCard: React.FC<PresetCardProps> = ({ preset, isSelected, onSelect })
   return (
     <button
       onClick={onSelect}
-      className={cn('preset-card group', isSelected && 'selected')}
+      className={cn('preset-card group overflow-hidden rounded-[1.6rem]', isSelected && 'selected')}
     >
-      <div className="aspect-[3/4] overflow-hidden">
+      <div className="aspect-[3/4] overflow-hidden bg-muted">
         <img
           src={preset.thumbnail}
           alt={preset.name}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
-      <div className="p-2 text-left">
-        <p className="text-sm font-medium truncate">{preset.name}</p>
-        <p className="text-xs text-muted-foreground capitalize">
+      <div className="space-y-1 p-3 text-left">
+        <p className="truncate text-sm font-medium">{preset.name}</p>
+        <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">
           {preset.gender} / {preset.style}
         </p>
       </div>

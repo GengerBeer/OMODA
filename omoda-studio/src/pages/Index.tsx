@@ -770,76 +770,79 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(24,24,24,0.08),_transparent_55%)]" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_top,_rgba(32,32,32,0.12),_transparent_54%)]" />
+      <div className="absolute inset-x-0 top-20 -z-10 h-[42rem] bg-[linear-gradient(180deg,rgba(246,243,237,0.92),rgba(255,255,255,0))]" />
 
-      <header className="border-b border-border/80 bg-background/85 backdrop-blur">
-        <div className="container flex min-h-20 flex-wrap items-center justify-between gap-4 py-4">
+      <header className="border-b border-border/70 bg-background/80 backdrop-blur-xl">
+        <div className="container flex min-h-20 items-center justify-between py-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <span className="text-xl font-semibold tracking-[0.28em] uppercase">OMODA STUDIO</span>
-                          </div>
+              <span className="text-xl font-semibold tracking-[0.32em] uppercase">OMODA STUDIO</span>
+            </div>
             <p className="text-sm text-muted-foreground">
-              Preset studio looks and personal selfie try-on in one flow.
+              Editorial-grade virtual try-on for clean catalog imagery.
             </p>
           </div>
-
+          <Badge variant="outline" className="hidden rounded-full px-4 py-1 text-[11px] tracking-[0.18em] uppercase text-muted-foreground sm:inline-flex">
+            Live Studio Workflow
+          </Badge>
         </div>
       </header>
 
       <main className="container py-10 sm:py-14">
-        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-          <div className="space-y-6">
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-6 rounded-[2rem] border border-border/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.96),rgba(245,241,234,0.88))] p-7 shadow-elevated sm:p-9">
             <div className="space-y-4">
+              <Badge variant="outline" className="rounded-full px-4 py-1 text-[11px] tracking-[0.18em] uppercase">
+                Premium Catalog Pipeline
+              </Badge>
               <h1 className="max-w-3xl text-balance text-4xl font-semibold leading-tight sm:text-5xl">
-                Merge preset styling and personal try-on into one premium studio workflow.
+                Build refined fashion try-on imagery from a cleaner, faster studio workflow.
               </h1>
-              <p className="max-w-2xl text-lg text-muted-foreground">
-                Upload up to three outfit references, choose a preset model or your own photos, then generate the
-                base studio image and catalog crop first, with angle views available on demand.
+              <p className="max-w-2xl text-lg leading-8 text-muted-foreground">
+                Upload up to three outfit references, switch between preset casting and personal try-on, and generate
+                the hero-ready render first, with angle views available only when you want them.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <FeatureCard
-                title="Preset Studio"
-                description="Supabase-powered model presets for fast catalog imagery."
+                title="Curated Casting"
+                description="Preset models and custom prompts in one polished selection flow."
               />
               <FeatureCard
-                title="On Yourself"
-                description="Guest-friendly selfie mode with face and body references, no account required."
+                title="Layered Look Input"
+                description="Mix tops, bottoms, outerwear, or a real photo of the outfit already worn."
               />
               <FeatureCard
-                title="Angle Views"
-                description="Generate front, side, back and 3/4 variants from the final result."
+                title="Controlled Output"
+                description="Base image first, catalog crop next, optional angle generation after approval."
               />
             </div>
           </div>
 
-          <Card className="border-border/70 bg-card/90 shadow-elevated">
-            <CardHeader className="pb-4">
+          <Card className="overflow-hidden rounded-[2rem] border-border/70 bg-card/90 shadow-elevated">
+            <CardHeader className="border-b border-border/70 bg-secondary/35 pb-5">
               <CardTitle className="text-xl">Workflow Snapshot</CardTitle>
-              <CardDescription>
+              <CardDescription className="max-w-md text-sm leading-6">
                 {generationSummary.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-muted-foreground">
-              <div className="flex items-start gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  1
-                </span>
-                <p>Upload up to three outfit references or paste them with Ctrl+V. The app combines them into one garment brief for every mode.</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  2
-                </span>
-                <p>Switch between preset catalog mode and the personalized selfie workflow without leaving the page.</p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                  3
-                </span>
-                <p>One generation produces the base render and catalog crop first. Angle views can be triggered separately when needed.</p>
-              </div>
+            <CardContent className="grid gap-3 p-5 sm:p-6">
+              <WorkflowStepItem
+                number="1"
+                title="Compose The Look"
+                description="Upload or paste references for a single garment, a layered outfit, or a person already wearing the desired look."
+              />
+              <WorkflowStepItem
+                number="2"
+                title="Choose The Subject"
+                description="Stay in preset mode for fast catalog casting or switch to selfie mode when the output should resemble a real person."
+              />
+              <WorkflowStepItem
+                number="3"
+                title="Generate In Stages"
+                description="Start with the main render and catalog crop, then trigger front, side, back, and 3/4 views only when needed."
+              />
             </CardContent>
           </Card>
         </section>
@@ -1347,7 +1350,7 @@ function SectionHeading({ number, title, subtitle }: SectionHeadingProps) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-secondary text-sm font-semibold text-foreground shadow-sm">
           {number}
         </div>
         <h2 className="text-xl sm:text-2xl">{title}</h2>
@@ -1364,12 +1367,32 @@ interface FeatureCardProps {
 
 function FeatureCard({ title, description }: FeatureCardProps) {
   return (
-    <Card className="border-border/70 bg-card/80">
+    <Card className="rounded-[1.5rem] border-border/70 bg-background/75 shadow-soft backdrop-blur">
       <CardContent className="space-y-2 pt-6">
-        <p className="font-medium">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm font-medium tracking-[0.08em] uppercase text-foreground/80">{title}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
+  );
+}
+
+interface WorkflowStepItemProps {
+  number: string;
+  title: string;
+  description: string;
+}
+
+function WorkflowStepItem({ number, title, description }: WorkflowStepItemProps) {
+  return (
+    <div className="grid grid-cols-[3rem_1fr] gap-4 rounded-[1.5rem] border border-border/70 bg-background/70 p-4">
+      <div className="flex h-12 w-12 items-center justify-center rounded-[1.1rem] bg-primary text-sm font-semibold text-primary-foreground shadow-soft">
+        {number}
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-semibold tracking-[0.08em] uppercase text-foreground/80">{title}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+      </div>
+    </div>
   );
 }
 
