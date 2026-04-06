@@ -3,5 +3,15 @@
     "api/process.ts": {
       "maxDuration": 300
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/privacy-policy",
+      "destination": "/"
+    },
+    {
+      "source": "/gdpr-policy",
+      "destination": "/"
+    }
+  ]
 }
