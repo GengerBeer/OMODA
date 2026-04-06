@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GarmentUpload } from '@/components/GarmentUpload';
+import { SiteFooter } from '@/components/SiteFooter';
 import { ModelPresetGrid } from '@/components/ModelPresetGrid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1336,6 +1337,8 @@ export default function Index() {
           )}
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
