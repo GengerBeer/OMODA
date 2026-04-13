@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import JSZip from 'jszip';
 import { GarmentUpload } from '@/components/GarmentUpload';
 import { SiteFooter } from '@/components/SiteFooter';
 import { ModelPresetGrid } from '@/components/ModelPresetGrid';
@@ -118,6 +119,33 @@ async function downloadImage(url: string, filename: string) {
   URL.revokeObjectURL(objectUrl);
 }
 
+async function downloadAllAsZip(
+  mainUrl: string,
+  cropBlob: Blob | null,
+  angles: { key: string; label: string; url: string | null }[],
+) {
+  const zip = new JSZip();
+  const ts = Date.now();
+
+  const mainResponse = await fetch(mainUrl);
+  zip.file(`omoda-main-render-${ts}.png`, await mainResponse.blob());
+
+  if (cropBlob) {
+    zip.file(`omoda-catalog-crop-${ts}.jpg`, cropBlob);
+  }
+
+  const readyAngles = angles.filter((a) => !!a.url);
+  await Promise.all(
+    readyAngles.map(async (a) => {
+      const res = await fetch(a.url!);
+      zip.file(`omoda-angle-${a.key}-${ts}.png`, await res.blob());
+    }),
+  );
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  downloadBlob(zipBlob, `omoda-studio-pack-${ts}.zip`);
+}
+
 async function uploadIncomingFile(file: File, prefix: string) {
   const fileName = `${prefix}_${Date.now()}_${sanitizeFileName(file)}`;
   const { error } = await supabase.storage.from('clothing-incoming').upload(fileName, file, {
@@ -172,6 +200,7 @@ export default function Index() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [isPolling, setIsPolling] = useState(false);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
 
   const [angleResults, setAngleResults] = useState<AngleResult[]>([]);
   const [isGeneratingAngles, setIsGeneratingAngles] = useState(false);
@@ -1187,6 +1216,35 @@ export default function Index() {
                           Start Another Look
                         </Button>
                       </div>
+
+                      <Button
+                        className="h-12 w-full rounded-full"
+                        disabled={isDownloadingZip}
+                        onClick={async () => {
+                          if (!resultUrl) return;
+                          setIsDownloadingZip(true);
+                          try {
+                            await downloadAllAsZip(resultUrl, portraitCropBlob, angleResults);
+                            toast.success('ZIP downloaded.');
+                          } catch {
+                            toast.error('ZIP download failed.');
+                          } finally {
+                            setIsDownloadingZip(false);
+                          }
+                        }}
+                      >
+                        {isDownloadingZip ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Preparing ZIP...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download All as ZIP
+                          </>
+                        )}
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
