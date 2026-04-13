@@ -1,5 +1,4 @@
 import { waitUntil } from '@vercel/functions';
-import sharp from 'sharp';
 
 const ANGLE_MODE_MARKER = '[ANGLE_MODE]';
 const GENERATION_OPTIONS_MARKER = '[OMODA_OPTIONS]';
@@ -130,16 +129,6 @@ async function uploadToStorage(buffer: Buffer, filePath: string) {
   }
 
   return `${CONFIG.SUPABASE_URL}/storage/v1/object/public/${filePath}`;
-}
-
-const OUTPUT_WIDTH = 864;
-const OUTPUT_HEIGHT = 1184;
-
-async function normalizeImageBuffer(buffer: Buffer): Promise<Buffer> {
-  return sharp(buffer)
-    .resize(OUTPUT_WIDTH, OUTPUT_HEIGHT, { fit: 'contain', background: { r: 245, g: 245, b: 243, alpha: 1 } })
-    .png()
-    .toBuffer();
 }
 
 async function callGemini(prompt: string, images: Array<{ base64: string; mimeType: string }>): Promise<Buffer> {
@@ -417,10 +406,6 @@ async function processImage(imageId: string) {
       ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
     ]);
     resultBuffer = await callGemini(buildCustomPrompt(generationOptions), imageInputs);
-  }
-
-  if (!isAngleMode) {
-    resultBuffer = await normalizeImageBuffer(resultBuffer);
   }
 
   const timestamp = Date.now();
