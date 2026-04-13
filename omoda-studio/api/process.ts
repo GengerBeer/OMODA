@@ -297,20 +297,21 @@ Inputs:
 - Image 3: New clothing to apply. Ignore anyone wearing it — extract only the garment.${backgroundImageLine}
 
 Your job:
-Take Image 2 and produce an edited version where the clothing has been swapped to the garment from Image 3. That is the only change. Everything else — the face, the hair, the skin, the body shape, the proportions — must be identical to Image 2.
+Generate a new photorealistic image of this person wearing the garment from Image 3, placed in the background described below. Use Image 1 and Image 2 only as references for the person's identity and body — do NOT copy the background, lighting, or environment from any input image.
 
-Face rules (non-negotiable):
-- The face in the output must be the same face as in Images 1 and 2. Same eyes (shape, color), same nose, same lips, same bone structure, same skin tone, same hair color and style.
-- Use Image 1 as a high-resolution face reference to verify accuracy.
-- Do not generate a new or generic face. Do not beautify or alter the face in any way.
+PERSON (use Images 1 & 2 as reference):
+- Face: identical to Image 1 — same eyes, nose, lips, bone structure, skin tone, hair color and style. Do not generate a generic face.
+- Body: same proportions, height, and build as Image 2.
+- Pose: natural standing pose (do not copy the pose from Image 2 if it is unsuitable for a studio/catalog shot).
 
-Clothing rules:
-- Extract the garment from Image 3 and fit it naturally onto the body from Image 2.
+CLOTHING (from Image 3):
+- Extract the garment and fit it naturally onto this person's body.
 - Replicate all details: color, pattern, texture, fabric, cut, length, seams, fastenings.
 - The garment must drape and crease as if actually worn — not pasted on.
 - If Image 3 shows multiple garments, combine them into one look.
 
-Background: ${backgroundPrompt}
+BACKGROUND (ignore the backgrounds of all input photos):
+${backgroundPrompt}
 ${backgroundInstruction}
 
 Output specs:
@@ -318,7 +319,7 @@ Output specs:
 - OUTPUT SIZE IS FIXED: 864 × 1184 pixels. Ignore the aspect ratio of all input images. Do not match, inherit, or adapt to any input image dimensions. The output must always be exactly 864 pixels wide and 1184 pixels tall, regardless of input.
 - Photorealistic, no CGI, no smoothing, no stylisation.
 
-Output: The edited photo — same person, same pose, new clothing only.`;
+Output: One single photorealistic image of the person wearing the outfit in the specified background.`;
 }
 
 async function getClothingRecord(imageId: string): Promise<ClothingRecord> {
