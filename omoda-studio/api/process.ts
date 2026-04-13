@@ -292,23 +292,23 @@ function buildSelfiePrompt(options: GenerationOptions) {
   return `You are a photo-editing AI. You will perform a clothing swap on a real person's photo.
 
 Inputs:
-- Image 1: Close-up face photo of a real person. Memorise every detail of this face.
-- Image 2: Full-body photo of the exact same person. This is the BASE photo you will edit.
-- Image 3: New clothing to apply. Ignore anyone wearing it — extract only the garment.${backgroundImageLine}
+- Image 1: Close-up face photo of the TARGET person. Memorise every detail of this face.
+- Image 2: Garment / outfit reference. Extract only the clothing — ignore anyone wearing it.
+- Image 3: Full-body photo of the same TARGET person. Use for body proportions and build.${backgroundImageLine}
 
 Your job:
-Generate a new photorealistic image of this person wearing the garment from Image 3, placed in the background described below. Use Image 1 and Image 2 only as references for the person's identity and body — do NOT copy the background, lighting, or environment from any input image.
+Generate a new photorealistic image of this person wearing the garment from Image 2, placed in the background described below. Use Image 1 and Image 3 only as references for the person's identity and body — do NOT copy the background, lighting, or environment from any input image.
 
-PERSON (use Images 1 & 2 as reference):
+PERSON (use Images 1 & 3 as reference):
 - Face: identical to Image 1 — same eyes, nose, lips, bone structure, skin tone, hair color and style. Do not generate a generic face.
-- Body: same proportions, height, and build as Image 2.
-- Pose: natural standing pose (do not copy the pose from Image 2 if it is unsuitable for a studio/catalog shot).
+- Body: same proportions, height, and build as Image 3.
+- Pose: natural standing pose.
 
-CLOTHING (from Image 3):
+CLOTHING (from Image 2):
 - Extract the garment and fit it naturally onto this person's body.
 - Replicate all details: color, pattern, texture, fabric, cut, length, seams, fastenings.
 - The garment must drape and crease as if actually worn — not pasted on.
-- If Image 3 shows multiple garments, combine them into one look.
+- If Image 2 shows multiple garments, combine them into one look.
 
 BACKGROUND (ignore the backgrounds of all input photos):
 ${backgroundPrompt}
@@ -374,8 +374,8 @@ async function processImage(imageId: string) {
 
     const imageInputs = await Promise.all([
       downloadAsBase64(clothing.selfie_face_url),
-      downloadAsBase64(clothing.selfie_body_url),
       downloadAsBase64(clothing.file_url),
+      downloadAsBase64(clothing.selfie_body_url),
       ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
     ]);
 
