@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.2.0] - 2026-04-13
+
+### ✨ Improved
+
+#### On Yourself — Maximum Realism Push
+
+- **`api/process.ts`** — Second overhaul of `buildSelfiePrompt` for pixel-perfect face and body reproduction:
+  - Reframed task as "precision compositing", not creative generation
+  - Added `FACE — COPY EXACTLY` block with per-feature instructions (bone structure, eye color, pores, marks)
+  - Added `BODY — MATCH EXACTLY` block preserving pose from Image 3
+  - Added skin tone consistency instruction across all exposed body parts
+  - Added explicit failure criterion: "If the face does not match Image 2 exactly, the output is wrong"
+  - Lowered Gemini `temperature` from `0.4` → `0.2` for more deterministic, faithful output
+
+---
+
 ## [6.1.0] - 2026-04-13
 
 ### ✨ Improved

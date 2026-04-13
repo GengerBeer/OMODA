@@ -148,7 +148,7 @@ async function callGemini(prompt: string, images: Array<{ base64: string; mimeTy
         contents: [{ role: 'user', parts }],
         generationConfig: {
           responseModalities: ['TEXT', 'IMAGE'],
-          temperature: 0.4,
+          temperature: 0.2,
         },
       }),
     },
@@ -289,39 +289,46 @@ function buildSelfiePrompt(options: GenerationOptions) {
     ? '- Reproduce the environment, lighting direction, perspective, and depth from Image 4. Keep the person sharp and fully visible.'
     : '- Build the requested environment naturally around the person while keeping the outfit clearly visible.';
 
-  return `You are a photorealistic AI fashion try-on system. Your primary goal is maximum realism: the output must be indistinguishable from a real photograph.
+  return `You are a photorealistic AI fashion compositing system. This is NOT creative generation — this is a precision task. Every pixel of the person must match the source photos exactly.
 
 You receive ${totalImages} images:
-- Image 1: Garment / outfit reference. May be a flat lay, hanger shot, mannequin, or a photo of another person wearing the clothing.
-- Image 2: Close-up face photo of the TARGET person.
-- Image 3: Full-body photo of the same TARGET person.${backgroundImageLine}
+- Image 1: Garment / outfit reference. May be a flat lay, hanger shot, mannequin, or a person wearing the clothing.
+- Image 2: Close-up face photo of the TARGET person — the only valid face source.
+- Image 3: Full-body photo of the same TARGET person — the only valid body source.${backgroundImageLine}
 
 CORE TASK:
-Apply the clothing from Image 1 onto the person from Images 2 & 3. Treat Images 2 and 3 as the single source of truth for this person's identity and body — change ONLY the garment area.
+This is a virtual try-on: composite the clothing from Image 1 onto the body from Image 3, with the face replaced by Image 2. Nothing else changes.
 
-PERSON — DO NOT ALTER:
-- Face: reproduce every detail from Image 2 — facial structure, eyes, nose, lips, skin tone, skin texture, ethnicity, age appearance, any distinguishing features.
-- Hair: exact color, length, style, and texture from Image 2.
-- Body: exact silhouette, proportions, height, and build from Image 3.
-- The person must be instantly recognisable as the same individual. Do not beautify, slim, idealise, or alter them in any way.
+━━━ FACE — COPY EXACTLY ━━━
+- Treat Image 2 as the pixel-perfect face reference.
+- Copy every single facial feature without any modification: bone structure, eye shape and color, nose shape, lip shape and color, skin tone, skin texture, pores, any moles or marks, eyebrow shape, eyelash length.
+- Hair: exact color (including highlights and roots), exact length, exact style, exact texture from Image 2.
+- Do NOT smooth skin, do NOT change eye color, do NOT alter facial proportions in any way.
+- The person in the output must be 100% recognisable as the exact same individual from Image 2.
 
-CLOTHING — APPLY FAITHFULLY:
-- Extract the garment from Image 1 regardless of how it is presented (flat lay, hanger, mannequin, another person).
-- If Image 1 shows multiple pieces or an outfit reference sheet, combine them into one coherent styled look.
-- Replicate every clothing detail: silhouette, fit, length, cut, color, pattern, print, texture, fabric weight, seams, stitching, buttons, zippers, embellishments.
-- The garment must drape, fold, and fit naturally on THIS person's body — no pasting or floating edges.
-- Do not borrow any styling, accessories, or poses from Image 1's person.
+━━━ BODY — MATCH EXACTLY ━━━
+- Use Image 3 as the precise body template: height, shoulder width, hip width, leg length, arm length, overall silhouette.
+- Do not slim, widen, elongate, or idealise the body in any way.
+- Preserve the exact natural pose and stance from Image 3.
+- Match skin tone from Image 2 across all exposed body parts (neck, hands, arms).
 
-OUTPUT REQUIREMENTS:
+━━━ CLOTHING — APPLY FAITHFULLY ━━━
+- Extract the garment from Image 1 regardless of presentation (flat lay, hanger, mannequin, another person).
+- If Image 1 contains multiple pieces, combine into one coherent look.
+- Replicate every detail: exact color, pattern, print, texture, fabric weight, cut, length, silhouette, seams, stitching, buttons, zippers, embellishments.
+- The garment must wrap, drape, and crease naturally around THIS person's exact body shape.
+- Clothing edges must blend seamlessly — no floating, no pasting, no hard cutouts.
+- Do not copy pose, styling, or accessories from any person in Image 1.
+
+━━━ OUTPUT ━━━
 - Full body, head to toe, no cropping.
-- Natural, confident standing pose.
 - Background: ${backgroundPrompt}
 ${backgroundInstruction}
-- Sharp photorealistic focus, natural color grading, true-to-life skin texture.
+- True-to-life skin texture and natural color grading throughout.
 - Portrait orientation 864 × 1232 pixels.
-- Zero CGI look, zero stylisation, zero smoothing filters.
+- No CGI look, no airbrushing, no stylisation, no smoothing filters.
 
-Output: One single ultra-realistic photograph of the real person wearing the outfit.`;
+Output: One single photograph-quality image. If the face does not match Image 2 exactly, the output is wrong.`;
 }
 
 async function getClothingRecord(imageId: string): Promise<ClothingRecord> {
