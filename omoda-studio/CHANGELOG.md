@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.1.0] - 2026-04-13
+
+### ✨ Improved
+
+#### On Yourself — Selfie Try-On Prompt Overhaul
+
+- **`api/process.ts`** — Rewrote `buildSelfiePrompt` for maximum photorealism:
+  - Added explicit `CORE TASK` directive: change only the garment area, preserve everything else
+  - Added `PERSON — DO NOT ALTER` block locking face, hair, and body to Images 2 & 3
+  - Added `CLOTHING — APPLY FAITHFULLY` block with detailed fabric/fit/drape instructions
+  - Set top-level realism bar: output must be indistinguishable from a real photograph
+  - Added criterion: person must be instantly recognisable as the same individual
+  - Removed ambiguity in image role descriptions — Images 2 & 3 now explicitly called "source of truth"
+
+---
+
 ## [6.0.0] - 2026-02-20
 
 ### 🚀 Major Changes
