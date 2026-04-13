@@ -237,7 +237,7 @@ Requirements:
 - Background scene: ${backgroundPrompt}
 ${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 3 while keeping the model and garment clearly visible.' : '- Build the requested environment naturally around the model while keeping the garment easy to evaluate.'}
 - Maintain realistic skin texture, natural colors, and sharp focus.
-- Image resolution must be exactly 864 x 1184 pixels (portrait orientation).
+- OUTPUT SIZE IS FIXED: 864 × 1184 pixels. Ignore the aspect ratio of all input images. Do not match, inherit, or adapt to any input image dimensions. The output must always be exactly 864 pixels wide and 1184 pixels tall, regardless of input.
 - Keep the result suitable for a professional fashion catalog or campaign image.`;
 
   if (options.modelPrompt) {
@@ -269,7 +269,7 @@ Requirements:
 - Background scene: ${backgroundPrompt}
 ${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 2 while keeping the model and clothing in clear focus.' : '- Build the requested environment naturally around the model.'}
 - Maintain realistic skin texture, natural colors, and sharp focus.
-- Image resolution must be exactly 864 x 1184 pixels (portrait orientation).
+- OUTPUT SIZE IS FIXED: 864 × 1184 pixels. Ignore the aspect ratio of all input images. Do not match, inherit, or adapt to any input image dimensions. The output must always be exactly 864 pixels wide and 1184 pixels tall, regardless of input.
 - Keep the result suitable for a professional fashion catalog or e-commerce listing.
 - Avoid CGI, plastic skin, stylization, or artistic effects.`;
 
@@ -315,7 +315,7 @@ ${backgroundInstruction}
 
 Output specs:
 - Full body, head to toe, no cropping.
-- 864 × 1184 pixels portrait.
+- OUTPUT SIZE IS FIXED: 864 × 1184 pixels. Ignore the aspect ratio of all input images. Do not match, inherit, or adapt to any input image dimensions. The output must always be exactly 864 pixels wide and 1184 pixels tall, regardless of input.
 - Photorealistic, no CGI, no smoothing, no stylisation.
 
 Output: The edited photo — same person, same pose, new clothing only.`;
