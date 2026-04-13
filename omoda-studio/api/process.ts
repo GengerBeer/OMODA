@@ -289,36 +289,36 @@ function buildSelfiePrompt(options: GenerationOptions) {
     ? '- Reproduce the environment, lighting direction, perspective, and depth from Image 4. Keep the person sharp and fully visible.'
     : '- Build the requested environment naturally around the person while keeping the outfit clearly visible.';
 
-  return `You are a photorealistic AI fashion try-on system. Your task is to show a specific real person wearing specific clothing.
+  return `You are a photo-editing AI. You will perform a clothing swap on a real person's photo.
 
-You receive ${totalImages} images:
-- Image 1: Close-up face photo of the TARGET person. This is the primary identity reference — her face IS the output face.
-- Image 2: Full-body photo of the same TARGET person. Use for body shape, proportions, and pose.
-- Image 3: Clothing reference. May be a flat lay, hanger, mannequin, or another person wearing the garment.${backgroundImageLine}
+Inputs:
+- Image 1: Close-up face photo of a real person. Memorise every detail of this face.
+- Image 2: Full-body photo of the exact same person. This is the BASE photo you will edit.
+- Image 3: New clothing to apply. Ignore anyone wearing it — extract only the garment.${backgroundImageLine}
 
-STEP 1 — LOCK THE PERSON'S IDENTITY (Images 1 & 2):
-The person from Images 1 and 2 is the ONLY valid subject. Do not generate a generic model or anyone else.
-- Face: copy exactly from Image 1 — facial bone structure, eye shape and color, nose, lips, skin tone, skin texture, hair color, hair length, hair style. This face must appear in the output unchanged.
-- Body: match the silhouette, proportions, height, and build from Image 2.
-- Do not beautify, slim, or alter this person's appearance in any way.
+Your job:
+Take Image 2 and produce an edited version where the clothing has been swapped to the garment from Image 3. That is the only change. Everything else — the face, the hair, the skin, the body shape, the proportions — must be identical to Image 2.
 
-STEP 2 — APPLY THE CLOTHING (Image 3):
-- Extract the garment regardless of how it is shown in Image 3 (flat lay, hanger, mannequin, another person).
-- If Image 3 shows multiple pieces, combine into one coherent look.
-- Replicate exactly: color, pattern, print, texture, fabric, cut, length, seams, buttons, zippers, all details.
-- Fit the garment naturally to THIS person's body — it must drape and crease realistically, not look pasted.
-- Do not copy the pose, identity, or styling of any person in Image 3.
+Face rules (non-negotiable):
+- The face in the output must be the same face as in Images 1 and 2. Same eyes (shape, color), same nose, same lips, same bone structure, same skin tone, same hair color and style.
+- Use Image 1 as a high-resolution face reference to verify accuracy.
+- Do not generate a new or generic face. Do not beautify or alter the face in any way.
 
-OUTPUT:
-- Full body head to toe, no cropping.
-- Natural standing pose.
-- Background: ${backgroundPrompt}
+Clothing rules:
+- Extract the garment from Image 3 and fit it naturally onto the body from Image 2.
+- Replicate all details: color, pattern, texture, fabric, cut, length, seams, fastenings.
+- The garment must drape and crease as if actually worn — not pasted on.
+- If Image 3 shows multiple garments, combine them into one look.
+
+Background: ${backgroundPrompt}
 ${backgroundInstruction}
-- Photorealistic, sharp focus, natural colors, true skin texture.
-- Portrait orientation 864 × 1232 pixels.
-- No CGI, no smoothing, no stylisation.
 
-Output: One single ultra-realistic photo of the person from Image 1 wearing the clothing from Image 3.`;
+Output specs:
+- Full body, head to toe, no cropping.
+- 864 × 1232 pixels portrait.
+- Photorealistic, no CGI, no smoothing, no stylisation.
+
+Output: The edited photo — same person, same pose, new clothing only.`;
 }
 
 async function getClothingRecord(imageId: string): Promise<ClothingRecord> {

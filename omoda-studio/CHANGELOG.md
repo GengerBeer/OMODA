@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.3.0] - 2026-04-13
+
+### ✨ Improved
+
+#### On Yourself — Reframe as Photo Editing + Catalog Crop Fix
+
+- **`api/process.ts`** — Rewrote `buildSelfiePrompt` as a photo-editing task instead of generation:
+  - Prompt now says "Take Image 2 and produce an edited version — only the clothing changes"
+  - Face rules marked as non-negotiable with Image 1 as high-res verification reference
+  - Eliminates generic model generation by anchoring to the actual base photo
+- **`src/lib/studioPack.ts`** — Fixed catalog crop formula:
+  - Widened crop from 62% → 78% of image width for better framing
+  - Changed aspect ratio calculation to explicit `width * (4/3)` (was `width / 0.75`, same math but clearer)
+  - Reduced top offset from 4% → 2% to avoid clipping the head
+
+---
+
 ## [6.2.0] - 2026-04-13
 
 ### ✨ Improved

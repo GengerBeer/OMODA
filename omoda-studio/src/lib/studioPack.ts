@@ -150,10 +150,13 @@ export async function createStudioPortraitBlob(imageUrl: string) {
       throw new Error('Canvas is unavailable in this browser.');
     }
 
-    const cropWidth = Math.round(bitmap.width * 0.62);
-    const cropHeight = Math.round(cropWidth / 0.75);
+    // Crop to 3:4 portrait centered horizontally.
+    // Vertically: start at 2% from top so the head is never clipped,
+    // and the crop covers roughly the top 65% of the full-body image (head → waist).
+    const cropWidth = Math.round(bitmap.width * 0.78);
+    const cropHeight = Math.round(cropWidth * (4 / 3));
     const cropX = Math.max(0, Math.round((bitmap.width - cropWidth) / 2));
-    const cropY = Math.max(0, Math.min(Math.round(bitmap.height * 0.04), bitmap.height - cropHeight));
+    const cropY = Math.max(0, Math.min(Math.round(bitmap.height * 0.02), bitmap.height - cropHeight));
 
     context.fillStyle = '#f5f1ea';
     context.fillRect(0, 0, canvas.width, canvas.height);
