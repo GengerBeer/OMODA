@@ -153,16 +153,22 @@ export async function createStudioPortraitBlob(imageUrl: string) {
       throw new Error('Canvas is unavailable in this browser.');
     }
 
-    // Crop top 80% of image height starting at 3% from top (skips background
-    // padding Gemini adds above the head). Maintains canvas aspect ratio — no distortion.
-    const cropHeight = Math.round(bitmap.height * 0.80);
-    const cropWidth = Math.round(cropHeight * (CANVAS_W / CANVAS_H));
-    const cropX = Math.max(0, Math.round((bitmap.width - cropWidth) / 2));
-    const cropY = Math.max(0, Math.round(bitmap.height * 0.03));
+    // Crop: show top 68% of image at full width, skip 3% background at top.
+    // Scale with cover strategy — fills the canvas completely, slight side trim if needed.
+    const cropY = Math.round(bitmap.height * 0.03);
+    const cropHeight = Math.round(bitmap.height * 0.68);
+    const cropWidth = bitmap.width;
+    const cropX = 0;
+
+    const scale = Math.max(CANVAS_W / cropWidth, CANVAS_H / cropHeight);
+    const drawW = Math.round(cropWidth * scale);
+    const drawH = Math.round(cropHeight * scale);
+    const drawX = Math.round((CANVAS_W - drawW) / 2);
+    const drawY = 0;
 
     context.fillStyle = '#f5f1ea';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(bitmap, cropX, cropY, cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
+    context.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    context.drawImage(bitmap, cropX, cropY, cropWidth, cropHeight, drawX, drawY, drawW, drawH);
 
     return canvasToBlob(canvas, 'image/jpeg', 0.94);
   } finally {
