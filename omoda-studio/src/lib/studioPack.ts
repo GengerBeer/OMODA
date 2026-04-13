@@ -153,12 +153,12 @@ export async function createStudioPortraitBlob(imageUrl: string) {
       throw new Error('Canvas is unavailable in this browser.');
     }
 
-    // Crop the top 65% of image height (head → mid-thigh) maintaining the
-    // canvas aspect ratio so the result fills the output without distortion.
-    const cropHeight = Math.round(bitmap.height * 0.65);
+    // Crop top 80% of image height starting at 3% from top (skips background
+    // padding Gemini adds above the head). Maintains canvas aspect ratio — no distortion.
+    const cropHeight = Math.round(bitmap.height * 0.80);
     const cropWidth = Math.round(cropHeight * (CANVAS_W / CANVAS_H));
     const cropX = Math.max(0, Math.round((bitmap.width - cropWidth) / 2));
-    const cropY = Math.max(0, Math.round(bitmap.height * 0.01));
+    const cropY = Math.max(0, Math.round(bitmap.height * 0.03));
 
     context.fillStyle = '#f5f1ea';
     context.fillRect(0, 0, canvas.width, canvas.height);
