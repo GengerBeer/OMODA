@@ -149,6 +149,9 @@ async function callGemini(prompt: string, images: Array<{ base64: string; mimeTy
         generationConfig: {
           responseModalities: ['TEXT', 'IMAGE'],
           temperature: 0.4,
+          imageGenerationConfig: {
+            aspectRatio: '3:4',
+          },
         },
       }),
     },
