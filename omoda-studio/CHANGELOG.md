@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.2.0] - 2026-04-13
+
+### ✨ Improved
+
+#### On Yourself — Face Identity Fix
+
+- **`api/process.ts`** — Restructured selfie try-on to lock face identity first:
+  - **Image order changed**: face → body → clothing (was: clothing → face → body). Face is now Image 1 so Gemini anchors identity before processing anything else.
+  - Rewrote prompt as two explicit steps: Step 1 = lock person identity, Step 2 = apply clothing
+  - Added "her face IS the output face" — eliminates generic model substitution
+  - Clothing is now Image 3 with clear "do not copy identity from Image 3" guard
+
+---
+
 ## [6.1.0] - 2026-04-13
 
 ### ✨ Improved

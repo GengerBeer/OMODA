@@ -289,39 +289,36 @@ function buildSelfiePrompt(options: GenerationOptions) {
     ? '- Reproduce the environment, lighting direction, perspective, and depth from Image 4. Keep the person sharp and fully visible.'
     : '- Build the requested environment naturally around the person while keeping the outfit clearly visible.';
 
-  return `You are a photorealistic AI fashion try-on system. Your primary goal is maximum realism: the output must be indistinguishable from a real photograph.
+  return `You are a photorealistic AI fashion try-on system. Your task is to show a specific real person wearing specific clothing.
 
 You receive ${totalImages} images:
-- Image 1: Garment / outfit reference. May be a flat lay, hanger shot, mannequin, or a photo of another person wearing the clothing.
-- Image 2: Close-up face photo of the TARGET person.
-- Image 3: Full-body photo of the same TARGET person.${backgroundImageLine}
+- Image 1: Close-up face photo of the TARGET person. This is the primary identity reference — her face IS the output face.
+- Image 2: Full-body photo of the same TARGET person. Use for body shape, proportions, and pose.
+- Image 3: Clothing reference. May be a flat lay, hanger, mannequin, or another person wearing the garment.${backgroundImageLine}
 
-CORE TASK:
-Apply the clothing from Image 1 onto the person from Images 2 & 3. Treat Images 2 and 3 as the single source of truth for this person's identity and body — change ONLY the garment area.
+STEP 1 — LOCK THE PERSON'S IDENTITY (Images 1 & 2):
+The person from Images 1 and 2 is the ONLY valid subject. Do not generate a generic model or anyone else.
+- Face: copy exactly from Image 1 — facial bone structure, eye shape and color, nose, lips, skin tone, skin texture, hair color, hair length, hair style. This face must appear in the output unchanged.
+- Body: match the silhouette, proportions, height, and build from Image 2.
+- Do not beautify, slim, or alter this person's appearance in any way.
 
-PERSON — DO NOT ALTER:
-- Face: reproduce every detail from Image 2 — facial structure, eyes, nose, lips, skin tone, skin texture, ethnicity, age appearance, any distinguishing features.
-- Hair: exact color, length, style, and texture from Image 2.
-- Body: exact silhouette, proportions, height, and build from Image 3.
-- The person must be instantly recognisable as the same individual. Do not beautify, slim, idealise, or alter them in any way.
+STEP 2 — APPLY THE CLOTHING (Image 3):
+- Extract the garment regardless of how it is shown in Image 3 (flat lay, hanger, mannequin, another person).
+- If Image 3 shows multiple pieces, combine into one coherent look.
+- Replicate exactly: color, pattern, print, texture, fabric, cut, length, seams, buttons, zippers, all details.
+- Fit the garment naturally to THIS person's body — it must drape and crease realistically, not look pasted.
+- Do not copy the pose, identity, or styling of any person in Image 3.
 
-CLOTHING — APPLY FAITHFULLY:
-- Extract the garment from Image 1 regardless of how it is presented (flat lay, hanger, mannequin, another person).
-- If Image 1 shows multiple pieces or an outfit reference sheet, combine them into one coherent styled look.
-- Replicate every clothing detail: silhouette, fit, length, cut, color, pattern, print, texture, fabric weight, seams, stitching, buttons, zippers, embellishments.
-- The garment must drape, fold, and fit naturally on THIS person's body — no pasting or floating edges.
-- Do not borrow any styling, accessories, or poses from Image 1's person.
-
-OUTPUT REQUIREMENTS:
-- Full body, head to toe, no cropping.
-- Natural, confident standing pose.
+OUTPUT:
+- Full body head to toe, no cropping.
+- Natural standing pose.
 - Background: ${backgroundPrompt}
 ${backgroundInstruction}
-- Sharp photorealistic focus, natural color grading, true-to-life skin texture.
+- Photorealistic, sharp focus, natural colors, true skin texture.
 - Portrait orientation 864 × 1232 pixels.
-- Zero CGI look, zero stylisation, zero smoothing filters.
+- No CGI, no smoothing, no stylisation.
 
-Output: One single ultra-realistic photograph of the real person wearing the outfit.`;
+Output: One single ultra-realistic photo of the person from Image 1 wearing the clothing from Image 3.`;
 }
 
 async function getClothingRecord(imageId: string): Promise<ClothingRecord> {
@@ -375,9 +372,9 @@ async function processImage(imageId: string) {
     }
 
     const imageInputs = await Promise.all([
-      downloadAsBase64(clothing.file_url),
       downloadAsBase64(clothing.selfie_face_url),
       downloadAsBase64(clothing.selfie_body_url),
+      downloadAsBase64(clothing.file_url),
       ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
     ]);
 
