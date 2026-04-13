@@ -141,22 +141,24 @@ export async function createStudioPortraitBlob(imageUrl: string) {
   const bitmap = await createImageBitmap(sourceBlob);
 
   try {
-    // Output canvas: 4:5 portrait — matches standard catalog editorial ratio.
+    // Output canvas: 900×1286 — matches the full-body render dimensions.
+    const CANVAS_W = 900;
+    const CANVAS_H = 1286;
     const canvas = document.createElement('canvas');
-    canvas.width = 900;
-    canvas.height = 1125;
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
 
     const context = canvas.getContext('2d');
     if (!context) {
       throw new Error('Canvas is unavailable in this browser.');
     }
 
-    // Source crop: 4:5 ratio, 78% of image width, top-aligned at 1.5% to keep
-    // the head fully in frame. This captures head → mid-thigh (~67% of body height).
-    const cropWidth = Math.round(bitmap.width * 0.78);
-    const cropHeight = Math.round(cropWidth * (5 / 4));
+    // Crop the top 65% of image height (head → mid-thigh) maintaining the
+    // canvas aspect ratio so the result fills the output without distortion.
+    const cropHeight = Math.round(bitmap.height * 0.65);
+    const cropWidth = Math.round(cropHeight * (CANVAS_W / CANVAS_H));
     const cropX = Math.max(0, Math.round((bitmap.width - cropWidth) / 2));
-    const cropY = Math.max(0, Math.min(Math.round(bitmap.height * 0.015), bitmap.height - cropHeight));
+    const cropY = Math.max(0, Math.round(bitmap.height * 0.01));
 
     context.fillStyle = '#f5f1ea';
     context.fillRect(0, 0, canvas.width, canvas.height);

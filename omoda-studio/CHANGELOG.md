@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.5.0] - 2026-04-13
+
+### ✨ Improved / 🐛 Fixed
+
+#### Output size 900×1286 + Catalog Crop overhaul
+
+- **`api/process.ts`** — Changed Gemini output resolution from 864×1232 → **900×1286** in all three prompts (preset, custom, selfie)
+- **`src/lib/studioPack.ts`** — Rebuilt catalog crop:
+  - Canvas changed to **900×1286** (matches full-body render)
+  - Formula now height-based: shows top **65%** of image (head → mid-thigh), maintains canvas aspect ratio — no distortion
+- **`src/pages/Index.tsx`** — Updated all `aspect-[3/4]` containers to `aspect-[900/1286]`; catalog crop switched to `object-contain` so image isn't cut by container
+
+---
+
 ## [6.4.0] - 2026-04-13
 
 ### 🐛 Fixed
