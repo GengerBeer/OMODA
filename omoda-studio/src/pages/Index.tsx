@@ -1008,42 +1008,15 @@ export default function Index() {
 
                 <div className="space-y-3">
                   <p className="text-sm font-medium">Background reference image</p>
-                  {backgroundPreview ? (
-                    <div className="space-y-3">
-                      <img
-                        src={backgroundPreview}
-                        alt="Background reference"
-                        className="h-48 w-full rounded-2xl border border-border object-cover"
-                      />
-                      <Button
-                        variant="outline"
-                        className="w-full rounded-full"
-                        onClick={() => {
-                          revokePreview(backgroundPreview);
-                          setBackgroundFile(null);
-                          setBackgroundPreview(null);
-                        }}
-                      >
-                        Remove Background Image
-                      </Button>
-                    </div>
-                  ) : (
-                    <label className="upload-zone flex cursor-pointer flex-col items-center gap-3 rounded-2xl py-8 text-center">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <Upload className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-medium">Upload background image</p>
-                        <p className="text-sm text-muted-foreground">Optional JPG, PNG or WEBP reference</p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(event) => handlePreviewFile(event.target.files?.[0], backgroundPreview, setBackgroundFile, setBackgroundPreview)}
-                      />
-                    </label>
-                  )}
+                  <BackgroundImageUpload
+                    previewUrl={backgroundPreview}
+                    onSelect={(file) => handlePreviewFile(file, backgroundPreview, setBackgroundFile, setBackgroundPreview)}
+                    onClear={() => {
+                      revokePreview(backgroundPreview);
+                      setBackgroundFile(null);
+                      setBackgroundPreview(null);
+                    }}
+                  />
                   <p className="text-sm text-muted-foreground">
                     Use this when you want the output placed into a specific environment, interior, or campaign scene.
                   </p>
@@ -1466,8 +1439,35 @@ interface PhotoUploadCardProps {
 }
 
 function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: PhotoUploadCardProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file?.type.startsWith('image/')) {
+      onSelect(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
   return (
-    <Card className="border-dashed border-border/80">
+    <Card
+      className={`border-dashed border-border/80 transition-colors${isDragging ? ' border-primary bg-primary/5' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
       <CardContent className="space-y-4 pt-6">
         <div className="space-y-1">
           <p className="font-medium">{title}</p>
@@ -1476,6 +1476,11 @@ function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: 
 
         {previewUrl ? (
           <div className="space-y-3">
+            {isDragging && (
+              <div className="flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-primary/10 py-4 text-sm font-medium text-primary">
+                Drop to replace
+              </div>
+            )}
             <img
               src={previewUrl}
               alt={title}
@@ -1486,13 +1491,13 @@ function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: 
             </Button>
           </div>
         ) : (
-          <label className="upload-zone flex cursor-pointer flex-col items-center gap-3 rounded-2xl py-8 text-center">
+          <label className={`upload-zone flex cursor-pointer flex-col items-center gap-3 rounded-2xl py-8 text-center${isDragging ? ' active' : ''}`}>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <Upload className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
-              <p className="font-medium">Select image</p>
-              <p className="text-sm text-muted-foreground">JPG, PNG or WEBP</p>
+              <p className="font-medium">{isDragging ? 'Drop image here' : 'Select image'}</p>
+              <p className="text-sm text-muted-foreground">JPG, PNG or WEBP — or drag & drop</p>
             </div>
             <input
               type="file"
@@ -1504,5 +1509,86 @@ function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: 
         )}
       </CardContent>
     </Card>
+  );
+}
+
+interface BackgroundImageUploadProps {
+  previewUrl: string | null;
+  onSelect: (file: File) => void;
+  onClear: () => void;
+}
+
+function BackgroundImageUpload({ previewUrl, onSelect, onClear }: BackgroundImageUploadProps) {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file?.type.startsWith('image/')) {
+      onSelect(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (event: React.DragEvent) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+      setIsDragging(false);
+    }
+  };
+
+  if (previewUrl) {
+    return (
+      <div
+        className={`space-y-3 rounded-2xl transition-colors${isDragging ? ' outline outline-2 outline-primary bg-primary/5' : ''}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        {isDragging && (
+          <div className="flex items-center justify-center rounded-2xl border-2 border-dashed border-primary bg-primary/10 py-4 text-sm font-medium text-primary">
+            Drop to replace
+          </div>
+        )}
+        <img
+          src={previewUrl}
+          alt="Background reference"
+          className="h-48 w-full rounded-2xl border border-border object-cover"
+        />
+        <Button variant="outline" className="w-full rounded-full" onClick={onClear}>
+          Remove Background Image
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <label
+      className={`upload-zone flex cursor-pointer flex-col items-center gap-3 rounded-2xl py-8 text-center${isDragging ? ' active' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <Upload className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div>
+        <p className="font-medium">{isDragging ? 'Drop image here' : 'Upload background image'}</p>
+        <p className="text-sm text-muted-foreground">Optional JPG, PNG or WEBP — or drag & drop</p>
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onSelect(file);
+        }}
+      />
+    </label>
   );
 }
