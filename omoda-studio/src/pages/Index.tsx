@@ -778,7 +778,7 @@ export default function Index() {
         <div className="container flex min-h-20 items-center justify-between py-4">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <span className="text-xl font-semibold tracking-[0.32em] uppercase">OMODA STUDIO</span>
+              <span className="text-xl font-semibold tracking-[0.32em] uppercase">OMODA STUDIO DEMO</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Editorial-grade virtual try-on for clean catalog imagery.
