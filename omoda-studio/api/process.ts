@@ -1,4 +1,5 @@
 import { waitUntil } from '@vercel/functions';
+import sharp from 'sharp';
 
 const ANGLE_MODE_MARKER = '[ANGLE_MODE]';
 const GENERATION_OPTIONS_MARKER = '[OMODA_OPTIONS]';
@@ -131,6 +132,16 @@ async function uploadToStorage(buffer: Buffer, filePath: string) {
   return `${CONFIG.SUPABASE_URL}/storage/v1/object/public/${filePath}`;
 }
 
+const OUTPUT_WIDTH = 864;
+const OUTPUT_HEIGHT = 1184;
+
+async function normalizeImageBuffer(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer)
+    .resize(OUTPUT_WIDTH, OUTPUT_HEIGHT, { fit: 'contain', background: { r: 245, g: 245, b: 243, alpha: 1 } })
+    .png()
+    .toBuffer();
+}
+
 async function callGemini(prompt: string, images: Array<{ base64: string; mimeType: string }>): Promise<Buffer> {
   const parts = [{ text: prompt }, ...images.map((image) => ({
     inlineData: {
@@ -237,7 +248,7 @@ Requirements:
 - Background scene: ${backgroundPrompt}
 ${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 3 while keeping the model and garment clearly visible.' : '- Build the requested environment naturally around the model while keeping the garment easy to evaluate.'}
 - Maintain realistic skin texture, natural colors, and sharp focus.
-- Image resolution must be exactly 864 x 1232 pixels (portrait orientation).
+- Image resolution must be exactly 864 x 1184 pixels (portrait orientation).
 - Keep the result suitable for a professional fashion catalog or campaign image.`;
 
   if (options.modelPrompt) {
@@ -269,7 +280,7 @@ Requirements:
 - Background scene: ${backgroundPrompt}
 ${options.backgroundImageUrl ? '- Match the environment, perspective, depth, and lighting direction from Image 2 while keeping the model and clothing in clear focus.' : '- Build the requested environment naturally around the model.'}
 - Maintain realistic skin texture, natural colors, and sharp focus.
-- Image resolution must be exactly 864 x 1232 pixels (portrait orientation).
+- Image resolution must be exactly 864 x 1184 pixels (portrait orientation).
 - Keep the result suitable for a professional fashion catalog or e-commerce listing.
 - Avoid CGI, plastic skin, stylization, or artistic effects.`;
 
@@ -315,7 +326,7 @@ ${backgroundInstruction}
 
 Output specs:
 - Full body, head to toe, no cropping.
-- 864 × 1232 pixels portrait.
+- 864 × 1184 pixels portrait.
 - Photorealistic, no CGI, no smoothing, no stylisation.
 
 Output: The edited photo — same person, same pose, new clothing only.`;
@@ -406,6 +417,10 @@ async function processImage(imageId: string) {
       ...(generationOptions.backgroundImageUrl ? [downloadAsBase64(generationOptions.backgroundImageUrl)] : []),
     ]);
     resultBuffer = await callGemini(buildCustomPrompt(generationOptions), imageInputs);
+  }
+
+  if (!isAngleMode) {
+    resultBuffer = await normalizeImageBuffer(resultBuffer);
   }
 
   const timestamp = Date.now();

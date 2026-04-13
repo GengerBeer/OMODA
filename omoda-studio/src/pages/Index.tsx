@@ -1073,7 +1073,7 @@ export default function Index() {
 
               {isGenerating && !resultUrl && !generationError && (
                 <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-                  <div className="mx-auto aspect-[900/1286] w-full max-w-sm animate-pulse rounded-3xl bg-muted" />
+                  <div className="mx-auto aspect-[864/1184] w-full max-w-sm animate-pulse rounded-3xl bg-muted" />
                   <Card className="border-border/70">
                     <CardContent className="flex h-full flex-col justify-center gap-3 pt-6">
                       <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -1094,7 +1094,7 @@ export default function Index() {
                       <img
                         src={resultUrl}
                         alt="Generated OMODA STUDIO look"
-                        className="aspect-[900/1286] w-full object-cover"
+                        className="aspect-[864/1184] w-full object-cover"
                       />
                       <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-success px-3 py-1 text-xs font-medium text-success-foreground">
                         <Check className="h-3.5 w-3.5" />
@@ -1200,7 +1200,7 @@ export default function Index() {
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card className="overflow-hidden border-border/70">
-                  <div className="relative aspect-[900/1286] bg-muted">
+                  <div className="relative aspect-[864/1184] bg-muted">
                     <img src={resultUrl} alt="Main studio render" className="h-full w-full object-cover" />
                   </div>
                   <CardContent className="space-y-2 pt-4">
@@ -1210,7 +1210,7 @@ export default function Index() {
                 </Card>
 
                 <Card className="overflow-hidden border-border/70">
-                  <div className="relative aspect-[900/1286] bg-muted">
+                  <div className="relative aspect-[864/1184] bg-muted">
                     {portraitCropUrl ? (
                       <img src={portraitCropUrl} alt="Portrait crop" className="h-full w-full object-contain" />
                     ) : (
@@ -1236,7 +1236,7 @@ export default function Index() {
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {angleResults.map((item) => (
                   <Card key={item.key} className="overflow-hidden border-border/70">
-                    <div className="relative aspect-[900/1286] bg-muted">
+                    <div className="relative aspect-[864/1184] bg-muted">
                       {item.loading && (
                         <div className="skeleton-shimmer absolute inset-0 flex flex-col items-center justify-center gap-2">
                           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -1295,14 +1295,14 @@ export default function Index() {
               {historyLoading ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {Array.from({ length: 4 }).map((_, index) => (
-                    <div key={index} className="aspect-[900/1286] animate-pulse rounded-3xl bg-muted" />
+                    <div key={index} className="aspect-[864/1184] animate-pulse rounded-3xl bg-muted" />
                   ))}
                 </div>
               ) : history.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   {history.map((item) => (
                     <Card key={item.id} className="overflow-hidden border-border/70">
-                      <img src={item.resultUrl} alt={item.modeLabel} className="aspect-[900/1286] w-full object-cover" />
+                      <img src={item.resultUrl} alt={item.modeLabel} className="aspect-[864/1184] w-full object-cover" />
                       <CardContent className="space-y-3 pt-4">
                         <div className="flex items-center justify-between gap-2">
                           <Badge variant="secondary">{item.modeLabel}</Badge>
@@ -1421,7 +1421,7 @@ function PhotoUploadCard({ title, description, previewUrl, onClear, onSelect }: 
             <img
               src={previewUrl}
               alt={title}
-              className="aspect-[900/1286] w-full rounded-2xl border border-border object-cover"
+              className="aspect-[864/1184] w-full rounded-2xl border border-border object-cover"
             />
             <Button variant="outline" className="w-full rounded-full" onClick={onClear}>
               Replace Photo

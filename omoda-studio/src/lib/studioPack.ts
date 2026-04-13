@@ -142,8 +142,8 @@ export async function createStudioPortraitBlob(imageUrl: string) {
 
   try {
     // Output canvas: 900×1286 — matches the full-body render dimensions.
-    const CANVAS_W = 900;
-    const CANVAS_H = 1286;
+    const CANVAS_W = 864;
+    const CANVAS_H = 1184;
     const canvas = document.createElement('canvas');
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
