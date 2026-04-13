@@ -10,7 +10,7 @@ const presets = [
   { file: '66195_1_3000x3000.jpg', name: 'Nina', gender: 'female', style: 'casual' },
   { file: '67264_1_3000x3000.jpg', name: 'Sophie', gender: 'female', style: 'elegant' },
   { file: '67505_1_3000x3000.jpg', name: 'Ryan', gender: 'male', style: 'street' },
-  { file: '69940_1_3000x3000.jpg', name: 'Zara', gender: 'female', style: 'street' },
+  { file: '69940_1_3000x3000.jpg', name: 'Lora', gender: 'female', style: 'street' },
   { file: '69969_1_3000x3000.jpg', name: 'Luna', gender: 'female', style: 'street' },
   { file: '70237_1_3000x3000.jpg', name: 'Alex', gender: 'male', style: 'casual' },
   { file: '71197_1_3000x3000.jpg', name: 'Jake', gender: 'male', style: 'casual' },
