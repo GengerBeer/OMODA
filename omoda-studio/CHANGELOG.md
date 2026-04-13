@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [6.4.0] - 2026-04-13
+
+### 🐛 Fixed
+
+#### Catalog Crop — Match Editorial Reference
+
+- **`src/lib/studioPack.ts`** — Rebuilt catalog crop to match reference etalon:
+  - Canvas changed from 900×1200 (3:4) → 900×1125 (4:5) — standard catalog editorial ratio
+  - Source crop now 4:5 ratio (was 3:4), 78% of image width, top offset 1.5%
+  - Result: head → mid-thigh framing, person fills frame without leg cutoff
+
+---
+
 ## [6.3.0] - 2026-04-13
 
 ### ✨ Improved
